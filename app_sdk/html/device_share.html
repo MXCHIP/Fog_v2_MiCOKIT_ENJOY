@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="format-detection" content="telephone=no" />
+		<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+		<title>title</title>
+
+		<link rel="stylesheet" href="../css/mui.css" />
+
+		<script type="text/javascript" src="../js/mui.js"></script>
+		<script type="text/javascript" src="../js/qr_code.js"></script>
+		<script type="text/javascript" src="../js/device_share.js" ></script>
+		<script type="text/javascript" src="../js/config.js"></script>
+
+	</head>
+
+	<body>
+		<header class="mui-plus mui-statusbar mui-statusbar-offset" style="background: #F9F9F9;">
+			<div class="mui-bar mui-bar-nav">
+				<a class="mui-icon mui-icon-left-nav mui-pull-left" onclick="quit_device_share_page()"></a>
+				<h1 class="mui-title">设备分享</h1>
+			</div>
+		</header>
+
+		<div style="padding-top: 100px; text-align: center;">
+			<div>
+				<p id="share_qr_img_txt">加载中,请稍后...</p>
+			</div>
+
+			<br />
+
+			<img id="device_share_qr_img" src="" />
+
+		</div>
+
+		<script>
+			apiready = function() {
+				//引入api cloud的FNScanner模块
+				FNScanner = api.require('FNScanner');
+				mico2 = api.require('mico2');
+				
+				device_share_page_listen_keyback();
+				
+				//生成二维码
+				encodeImg(api.pageParam);
+			}
+		</script>
+
+	</body>
+
+</html>

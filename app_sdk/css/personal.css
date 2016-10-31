@@ -1,0 +1,10 @@
+.mui-table-view .mui-media-object {
+	line-height: 60px;
+	max-width: 60px;
+	height: 60px;
+}
+
+.mui-table-view .mui-media-body{
+	margin-top: 10px;
+}
+

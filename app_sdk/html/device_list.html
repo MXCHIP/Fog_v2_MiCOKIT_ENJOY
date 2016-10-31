@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="format-detection" content="telephone=no" />
+		<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+		<title>title</title>
+
+		<link rel="stylesheet" type="text/css" href="../css/mui.css" />
+		<link rel="stylesheet" href="../css/iconfont.css" />
+		<link rel="stylesheet" href="../css/device_list.css" />
+
+		<script src="../js/mui.js" type="text/javascript" charset="utf-8"></script>
+		<script src="../js/config.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="../js/qr_code.js"></script>
+		<script src="../js/device_list.js" type="text/javascript" charset="utf-8"></script>
+
+	</head>
+
+	<body>
+		<div style="text-align: center;">
+			<h5>下拉刷新设备列表</h5>
+		</div>
+
+		<div>
+			<ul class="mui-table-view" id="deviceList" style="display: none;">
+
+				<!--<!--js动态生成的li标签样式-->
+
+				<li id="aa2dde14-0b8d-11e6-a739-00163e0204c0,7617" class="mui-table-view-cell" style="background: #DFDFDF;">
+					<div class="mui-slider-right mui-disabled">
+						<a class="mui-btn mui-btn-blue mui-icon device_list_share_romove icon-rename" onclick="device_list_rename(this)"></a>
+						<a class="mui-btn mui-btn-green mui-icon device_list_share_romove icon-share2" onclick="device_list_share(this)"></a>
+						<a class="mui-btn mui-btn-yellow mui-icon device_list_share_romove icon-shouquan2" onclick="device_list_management(this)"></a>
+						<a class="mui-btn mui-btn-red mui-icon device_list_share_romove icon-delete" onclick="device_list_delete(this)"></a>
+					</div>
+					<div class="mui-slider-handle" onclick="openDeviceInfo(this)">
+
+						<div style="float: left; color: #007AFF">
+							<span class="mui-icon device_search icon-device2"></span>
+						</div>
+
+						<div class="device_list_text">
+							<div>
+								<span style="vertical-align: middle;">MiCOKIT-3165</span>
+								<span class="mui-badge mui-badge-danger" style="vertical-align: middle; margin-left: 5px;">离线</span>
+								<span class="mui-badge mui-badge-primary" style="vertical-align: middle; margin-left: 5px;">父</span>
+							</div>
+
+							<p>
+								<h6>64e1bcea</h6>
+							</p>
+						</div>
+
+					</div>
+				</li>
+
+			</ul>
+		</div>
+		
+		<script type="text/javascript">
+			apiready = function() {
+				mico2 = api.require("mico2");
+
+				add_event_listener('refesh_device_list', refresh_event_listener); //监听刷新事件,事件名称'refesh_device_list'
+
+				//重新回到应用则重新重新监听设备数据
+				add_event_listener('resume', getDeviceList); 
+			
+				getDeviceList();
+
+				close_view_cell();
+
+				//下拉刷新
+				api.setRefreshHeaderInfo(refresh, function(ret, err) {
+					//在这里从服务器加载数据，加载完成后调用api.refreshHeaderLoadDone()方法恢复组件到默认状态
+					getDeviceList();
+
+					api.refreshHeaderLoadDone();
+				});
+			};
+		</script>
+
+	</body>
+
+</html>

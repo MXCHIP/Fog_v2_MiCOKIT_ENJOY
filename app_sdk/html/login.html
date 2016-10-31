@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="format-detection" content="telephone=no" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+
+		<link rel="stylesheet" type="text/css" href="../css/login.css" />
+		<link rel="stylesheet" href="../css/mui.css" />
+
+		<script type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="../js/login.js"></script>
+		<script type="text/javascript" src="../js/common.js"></script>
+		<script type="text/javascript" src="../js/config.js"></script>
+		<script type="text/javascript" src="../js/mui.js"></script>
+
+	</head>
+
+	<body>
+
+		<header class="mui-plus mui-statusbar mui-statusbar-offset" style="background: #F9F9F9;">
+			<div class="mui-bar mui-bar-nav">
+				<h1 class="mui-title">登录</h1>
+			</div>
+		</header>
+
+		<div class="mui-content" style="padding-top: 64px">
+			<div id="login">
+				<img src="../img/login_mico.png" />
+
+				<div id="login_form">
+					<form class="mui-input-group">
+						<div class="mui-input-row">
+							<label><span class="mui-icon mui-icon-phone"></span></label>
+							<input id="login_phone_num" type="tel" class="mui-input-clear" placeholder="手机号">
+						</div>
+						<div class="mui-input-row">
+							<label><span class="mui-icon mui-icon-locked"></span></label>
+							<input id="login_passwd" type="password" class="mui-input-password" placeholder="密码">
+						</div>
+					</form>
+				</div>
+				<div class="mui-button-row login_button">
+					<button type="button" class="mui-btn mui-btn-primary" onclick="login()">登&nbsp;&nbsp;录</button>
+					<button type="button" class="mui-btn mui-btn-danger" onclick="click_register()">注&nbsp;&nbsp;册</button>
+				</div>
+			</div>
+
+		</div>
+
+		<div class="forget_password" onclick="on_click_forget_password()">
+			<p">忘记密码?</p>
+			
+		</div>
+
+		<script>
+			apiready = function() {
+				mico2 = api.require('mico2');
+
+				//判断用户是否已登录
+				checkToken();
+
+				get_storage_data(); //读取存储在本地的手机号和密码
+
+				//监听返回键
+				ListenKeyBack();
+			}
+		</script>
+
+	</body>
+
+</html>

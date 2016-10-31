@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="format-detection" content="telephone=no" />
+		<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+		<title>title</title>
+
+		<link rel="stylesheet" href="../css/mui.css" />
+		<link rel="stylesheet" href="../css/device_management.css" />
+		<link rel="stylesheet" href="../css/iconfont.css" />
+
+		<script type="text/javascript" src="../js/mui.js"></script>
+		<script type="text/javascript" src="../js/config.js"></script>
+		<script type="text/javascript" src="../js/device_management.js"></script>
+
+	</head>
+
+	<body>
+		<header class="mui-plus mui-statusbar mui-statusbar-offset" style="background: #F9F9F9;">
+			<div class="mui-bar mui-bar-nav">
+				<a class="mui-icon mui-icon-left-nav mui-pull-left" onclick="quit_management_page()"></a>
+				<h1 class="mui-title">授权管理</h1>
+			</div>
+		</header>
+
+		<div style="padding-top: 65px; text-align: center;">
+			<div>
+				<p id="share_qr_img_txt">左滑可删除已授权的用户</p>
+			</div>
+		</div>
+
+		<div id="member_list" style="display:none;">
+			<ul class="mui-table-view">
+				<li class="mui-table-view-cell">
+
+					<div class="mui-slider-right mui-disabled">
+						<a class="mui-btn mui-btn-red mui-icon member_list icon-delete" onclick="delete_member(this)"></a>
+					</div>
+
+					<div class="mui-slider-handle">
+						<div class="member_icon_role2">
+							<span class="mui-icon member_icon_font icon-shouquan2"></span>
+						</div>
+
+						<div class="member_list_text">
+							<div class="member_list_member_text">
+								(管理员)13789811181
+							</div>
+						</div>
+					</div>
+				</li>
+
+				<li class="mui-table-view-cell">
+
+					<div class="mui-slider-right mui-disabled">
+						<a class="mui-btn mui-btn-red mui-icon member_list icon-delete" onclick="delete_member(this)"></a>
+					</div>
+
+					<div class="mui-slider-handle">
+						<div class="member_icon_role2">
+							<span class="mui-icon member_icon_font icon-shouquan2"></span>
+						</div>
+
+						<div class="member_list_text">
+							<div class="member_list_member_text">
+								(管理员)13789811181
+							</div>
+						</div>
+					</div>
+				</li>
+
+			</ul>
+		</div>
+
+		<script>
+			apiready = function() {
+				mico2 = api.require("mico2");
+				member_device_id = api.pageParam.info;
+				get_member_list();
+				
+				device_management_page_listen_keyback();
+			}
+		</script>
+
+	</body>
+
+</html>

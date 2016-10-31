@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+	<!--head主要完成页面的范围定义以及文件的引用-->
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="format-detection" content="telephone=no" />
+		<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+		<title>RGB操作界面</title>
+		<link rel="stylesheet" href="../css/mui.css" />
+		<link rel="stylesheet" href="../css/rgb_led.css" />
+
+		<script src="../js/mui.js"></script>
+		<script type="text/javascript" src="../js/jquery-2.0.3.min.js"></script>
+		<script type="text/javascript" src="../js/colorPicker.js"></script>
+		<script type="text/javascript" src="../js/process_data.js"></script>
+		<script type="text/javascript" src="../js/common.js"></script>
+		<script type="text/javascript" src="../js/config.js"></script>
+		<script type="text/javascript" src="../js/template_config.js"></script>
+
+		<style type="text/css">
+			body {
+				background: #FFFFFF;
+			}
+		</style>
+
+	</head>
+
+	<body>
+		<header class="mui-plus mui-statusbar mui-statusbar-offset" style="background: #F9F9F9;">
+			<div class="mui-bar mui-bar-nav">
+				<a class="mui-icon mui-icon-left-nav mui-pull-left" onclick="quit_rgbled_html()"></a>
+				<h1 class="mui-title">RGB_LED</h1>
+			</div>
+		</header>
+
+		<!--rgb控制-->
+		<div id="rgbctrl" style=" padding-top: 85px;">
+			<img id="rgb_Switch" src="../img/switchoff.svg" style="position: absolute;padding-top: 50px;" />
+
+			<div data-role="content" align="center">
+				<canvas id="canvas_colorPicker"></canvas>
+
+				<br /><br /><br />
+
+				<div style="height: 15px;">
+					<div style="float: left;width: 25%; margin-top: 5px;">
+						<span style="font-size: 15px;">饱和度</span>
+					</div>
+					<div style="float: left; width: 60%;">
+						<div class="mui-input-row mui-input-range">
+							<input type="range" id='rgb_saturation' value="100" min="0" max="100" onchange="saturation_slider_onChanged(this)">
+						</div>
+					</div>
+				</div>
+
+				<br /><br /><br />
+
+				<div>
+					<div style="float: left;width: 25%; margin-top: 5px;">
+						<span style="font-size: 15px;">亮度</span>
+					</div>
+					<div style="float: left; width: 60%;">
+						<div class="mui-input-row mui-input-range">
+							<input type="range" id='rgb_brightness' value="100" min="0" max="100" onchange="brightness_slider_onChanged(this)">
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<script>
+			apiready = function() {
+				mico2 = api.require("mico2");
+				
+				rgbled_page_listen_keyback();
+				
+				//alert(api.pageParam.info);
+
+				//mui.toast("RGB_LED页面加载成功");
+			}
+		</script>
+
+		<script type="text/javascript" src="../js/rgb_led.js"></script>
+
+	</body>
+
+</html>

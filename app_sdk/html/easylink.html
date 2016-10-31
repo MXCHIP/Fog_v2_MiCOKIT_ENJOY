@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+	<!--head主要完成页面的范围定义以及文件的引用-->
+
+	<head>
+		<meta charset="utf-8" />
+		<meta name="format-detection" content="telephone=no" />
+		<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+		<title>配网界面</title>
+		<link rel="stylesheet" href="../css/mui.css" />
+		<link rel="stylesheet" href="../css/easylink.css" />
+		<link rel="stylesheet" href="../css/iconfont.css" />
+
+		<script type="text/javascript" src="../js/mui.js"></script>
+		<script type="text/javascript" src="../js/config.js"></script>
+		<script type="text/javascript" src="../js/easylink.js"></script>
+		<script type="text/javascript" src="../js/device_list.js"></script>
+
+	</head>
+
+	<body>
+		<!--头部导航,bug，设置距离状态栏20px-->
+		<header class="mui-plus mui-statusbar mui-statusbar-offset" style="background: #F9F9F9;">
+			<div class="mui-bar mui-bar-nav">
+				<a class="mui-icon mui-icon-left-nav mui-pull-left" onclick="quit_easylink_page()"></a>
+				<h1 class="mui-title">配网</h1>
+			</div>
+		</header>
+
+		<div class="mui-content" style="padding-top: 64px">
+			<div id="easylink">
+				<div id="easylink_form">
+					<form class="mui-input-group">
+						<div class="mui-input-row" onclick="goto_sys_wifi_setting()">
+							<label><span class="mui-icon wifi_iconfont_ssid icon-wifi_name"></span></label>
+							<input id="easylink_wifi_name" readonly="readonly" type="text" class="mui-input-clear" placeholder="WiFi名称">
+						</div>
+						<div class="mui-input-row">
+							<label><span class="mui-icon wifi_iconfont_key icon-wifi_key"></span></label>
+							<input id="easylink_wifi_key" type="text" class="mui-input-clear" placeholder="密码">
+						</div>
+					</form>
+				</div>
+
+				<div class="mui-button-row easylink_button">
+					<button id="button_easylink" type="button" class="mui-btn mui-btn-primary" onclick="startEasyLink()">开启配网</button>
+				</div>
+
+			</div>
+		</div>
+
+		<ul id="search_devices" class="mui-table-view" style="margin-top: 30px; display: none;">
+
+			<!--<li style="background: #F3F3F7;"  onclick="bindDevice(this.id)" class="mui-table-view-cell mui-media" id="xxx">
+
+				<div style="float: left; color: #007AFF">
+					<span class="mui-icon device_search icon-device2"></span>
+				</div>
+				
+				<div class="mui-media-body" style="float: left; margin-left: 20px;">
+					MICOKIT-3165
+					<p class="mui-ellipsis">MAC: AA:BB:CC:DD:EE:FF</p>
+				</div>
+
+				<div style="float: right; margin-right: 10px; margin-top: 8px;">
+					<span class="mui-badge mui-badge-danger">已绑定</span>
+				</div>
+
+			</li>-->
+
+		</ul>
+
+		<!--javascript代码-->
+		<script>
+			apiready = function() {
+				mico2 = api.require('mico2');
+
+				add_event_listener('resume', startSearchDevices); //重新回到应用则重新重新监听设备数据
+
+				wifi_ssid_monitor();
+				
+				easylink_page_listen_keyback();
+
+				if(api.connectionType == 'wifi') {
+					startSearchDevices();
+				} else {
+					alert("手机未连接Wi-Fi,请进入系统Wi-Fi设置页面选取合适的网络！");
+				}
+			}
+		</script>
+
+	</body>
+
+</html>

@@ -1,0 +1,53 @@
+.mui-table-view-cell .mui-active {
+	background-color: #0062CC;
+}
+
+.peripherals_ul_style {
+	border-radius: 15px;
+	border: 1px solid #FFFFFF;
+	overflow: hidden;
+	margin: 6px;
+	border:none;
+	background: white;
+}
+
+.peripherals_li_icon{
+	float: left; 
+	font-size: 16px;
+	margin-right: 10px;
+	margin-top: 2px;
+}
+
+.peripherals_li_name{
+	float: left; 
+	margin-left: 7px;
+	margin-top: 2px;
+	font-size: 16px;
+}
+
+.peripherals_li_unit{
+	float: right;
+	font-size: 16px;
+}
+
+.peripherals_li_data{
+	float: right; 
+	margin-right: 6px;
+	margin-top: 1px;
+	font-size: 14px;
+}
+
+.peripherals_li_single_div_right{
+	float: right; 
+}
+
+#add_sub_device_button{
+	position: absolute;
+	top: 6px;
+	right: 13px;
+}
+
+.send_data_button{
+	width: 100%;
+	height: 40px;
+}

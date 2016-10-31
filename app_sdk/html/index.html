@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<meta name="format-detection" content="telephone=no" />
+		<title></title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="../css/mui.css" />
+		<link rel="stylesheet" href="../css/index.css" />
+		<link rel="stylesheet" href="../css/iconfont.css" />
+		
+		<script type="text/javascript" src="../js/mui.js"></script>
+		<script type="text/javascript" src="../js/config.js"></script>
+		<script type="text/javascript" src="../js/login.js"></script>
+		<script type="text/javascript" src="../js/device_list.js"></script>
+		<script type="text/javascript" src="../js/qr_code.js"></script>
+		
+	</head>
+
+	<body>
+		<header class="mui-plus mui-statusbar mui-statusbar-offset" style="background: #F9F9F9;">
+			<div class="mui-bar mui-bar-nav">
+				<h1 class="mui-title" id="title">设备列表</h1>
+				<span class="mui-icon qr_and_device_add icon-shaoma mui-pull-left top_shortcut" id="QR_code" onclick="openScanner()"></span>
+				<span class="mui-icon qr_and_device_add icon-add3 mui-pull-right top_shortcut" id="add_device" onclick="openWin('easylink', 'widget://html/easylink.html', true)"></span>
+			</div>
+		</header>
+
+		<nav class="mui-bar mui-bar-tab" style="background: #F9F9F9;">
+			<a class="mui-tab-item mui-active">
+				<span class="mui-icon index_list_iconfont icon-mulu"></span>
+				<span class="mui-tab-label">设备列表</span>
+			</a>
+
+			<a class="mui-tab-item">
+				<span class="mui-icon index_list_iconfont icon-gerenzhongxin"></span>
+				<span class="mui-tab-label">个人中心</span>
+			</a>
+
+		</nav>
+		<script>
+			apiready = function() {
+				mico2 = api.require('mico2');
+				
+				refesh_token();
+				
+				//引入api cloud的FNScanner模块
+				FNScanner = api.require('FNScanner');
+
+				//菜单切换
+				switchBar();
+
+				//设置状态栏
+				setStatusBar("dark");
+				
+				//监听返回键
+				ListenKeyBack();
+
+				//重新回到应用则重新重新监听设备数据
+				add_event_listener('resume', refesh_token); 
+
+				//创建并打开子页面
+				openFrameGroup();
+			}
+		</script>
+
+	</body>
+
+</html>

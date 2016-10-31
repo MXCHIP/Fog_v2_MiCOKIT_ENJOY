@@ -1,0 +1,29 @@
+
+#easylink{
+	text-align: center;
+	margin: 20px;
+}
+
+#easylink_form form{
+	border-radius: 15px;
+	border: 1px solid #007AFF; 
+	overflow: hidden;
+}
+
+#easylink_form .mui-input-group .mui-input-row label{
+	width: 20%;
+	text-align: center;
+	color: #007AFF;
+}
+
+#easylink_form .mui-input-group .mui-input-row input{
+	width: 80%;
+	height: 46px;	
+}
+
+.easylink_button button{
+	top: 10px;
+	width: 40%;
+	height: 40px;
+	margin: 10px;
+}

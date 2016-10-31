@@ -1,0 +1,39 @@
+#login{
+	text-align: center;
+	margin: 20px;
+}
+
+#login img{
+	width: 60%;
+}
+
+#login_form form{
+	border-radius: 15px;
+	border: 1px solid #007AFF; 
+	overflow: hidden;
+}
+
+#login_form .mui-input-group .mui-input-row label{
+	width: 20%;
+	text-align: center;
+	color: #007AFF;
+}
+
+#login_form .mui-input-group .mui-input-row input{
+	width: 80%;
+	height: 46px;	
+}
+
+.login_button button{
+	top: 10px;
+	width: 40%;
+	height: 40px;
+	margin: 10px;
+}
+
+.forget_password{
+	font-size: 15px; 
+	text-align: center; 
+	color: #007AFF; 
+	text-decoration:underline
+}

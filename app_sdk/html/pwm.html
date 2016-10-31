@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="format-detection" content="telephone=no" />
+		<meta name="viewport" content="maximum-scale=1.0,minimum-scale=1.0,user-scalable=0,width=device-width,initial-scale=1.0" />
+		<title>title</title>
+
+		<link rel="stylesheet" href="../css/mui.css" />
+
+		<script type="text/javascript" src="../js/mui.js"></script>
+		<script type="text/javascript" src="../js/template_config.js"></script>
+		<script type="text/javascript" src="../js/pwm.js"></script>
+		<script type="text/javascript" src="../js/config.js"></script>
+		<script type="text/javascript" src="../js/process_data.js"></script>
+
+	</head>
+
+	<body>
+		<header class="mui-plus mui-statusbar mui-statusbar-offset" style="background: #F9F9F9;">
+			<div class="mui-bar mui-bar-nav">
+				<a class="mui-icon mui-icon-left-nav mui-pull-left" onclick="quit_pwm_html()"></a>
+				<h1 class="mui-title">PWM控制</h1>
+			</div>
+		</header>
+
+		<div style=" padding-top: 120px;">
+			<div class="mui-input-row mui-input-range" style="margin: 30px;">
+				<input id='pwm_range_id' type="range" value="50" min="0" max="100" onchange="pwm_change(this)">
+			</div>
+		</div>
+
+		<div style="text-align: center;">
+			<h4 id="pwm_des_pwm"></h4>
+		</div>
+		
+		<script>
+			apiready = function() {
+				mico2 = api.require('mico2');
+				
+				pwm_page_listen_keyback();
+				
+				//alert(JSON.stringify(api.pageParam));
+
+				document.getElementById('pwm_range_id').max = api.pageParam.data_max; //取出最大值
+				document.getElementById('pwm_range_id').min = api.pageParam.data_min; //取出最小值
+				document.getElementById('pwm_range_id').value = ((api.pageParam.data_min + api.pageParam.data_max) / 2); //取出最小值
+				document.getElementById('pwm_des_pwm').innerHTML = "设备PID:" + api.pageParam.pid + '<br/>最小值:' + api.pageParam.data_min + '<br/>最大值:' + api.pageParam.data_max;
+			}
+		</script>
+
+	</body>
+
+</html>

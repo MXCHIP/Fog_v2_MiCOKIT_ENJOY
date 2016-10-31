@@ -1,0 +1,43 @@
+#register{
+	text-align: center;
+	margin: 5px;
+}
+
+#register img{
+	width: 40%;
+}
+
+.register_button button{
+	top: 10px;
+	width: 40%;
+	height: 40px;
+	margin: 10px;
+}
+
+#register_form{
+	width: 90%;
+	margin:auto;
+}
+
+#register_form form{
+	border-radius: 15px;
+	border: 1px solid #007AFF; 
+	overflow: hidden;
+}
+
+#register_form .mui-input-group .mui-input-row label{
+	width: 20%;
+	text-align: center;
+	color: #007AFF;
+}
+
+#register_form .mui-input-group .mui-input-row input{
+	width: 80%;
+	height: 46px;	
+}
+
+#register_vercode_button{
+	position: absolute;
+	top: 43px;
+	right: 5px;
+}

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="format-detection" content="telephone=no" />
+		<title></title>
+		<link href="../css/mui.css" rel="stylesheet" />
+		<link rel="stylesheet" href="../css/iconfont.css" />
+		<link rel="stylesheet" href="../css/peripherals.css" />
+
+		<script type="text/javascript" src="../js/mui.js"></script>
+		<script type="text/javascript" src="../js/config.js"></script>
+		<script type="text/javascript" src="../js/template_config.js"></script>
+		<script type="text/javascript" src="../js/get_peripherals_template.js"></script>
+		<script type="text/javascript" src="../js/process_data.js"></script>
+		<script type="text/javascript" src="../js/peripherals.js"></script>
+
+	</head>
+
+	<body>
+		<header class="mui-plus mui-statusbar mui-statusbar-offset" style="background: #F9F9F9;">
+			<div class="mui-bar mui-bar-nav">
+				<a class="mui-icon mui-icon-left-nav mui-pull-left" onclick="back_device_list_html()"></a>
+				<h1 class="mui-title">设备详情</h1>
+			</div>
+		</header>
+
+		<div style="margin-top: 73px; text-align: center;">
+			<h6 id="per_device_info"></h6>
+		</div>
+
+		<div>
+			<ul class="mui-table-view peripherals_ul_style">
+				<li class="mui-table-view-cell">
+					<div class="peripherals_li_icon">
+						<label><span class="mui-icon device_iconfont icon-shebei"></span></label>
+					</div>
+
+					<div class="peripherals_li_name" id="per_device_name">
+						设备名称
+					</div>
+
+					<div class="peripherals_li_unit" id="per_device_online">
+						<!--<span class="mui-badge mui-badge-green">在线</span>-->
+					</div>
+
+					<!--<div class="peripherals_li_unit">
+						<span class="mui-badge mui-badge-danger">离线</span>
+					</div>-->
+				</li>
+			</ul>
+
+			<ul class="mui-table-view peripherals_ul_style" id="add_sub_device" style="display: none;">
+				<li class="mui-table-view-cell">
+					<div class="peripherals_li_icon">
+						<label><span class="mui-icon device_iconfont icon-add2"></span></label>
+					</div>
+
+					<div class="peripherals_li_name" id="per_device_name">
+						添加子设备
+					</div>
+					<div>
+						<button type="button" id="add_sub_device_button" class="mui-btn mui-btn-green" onclick="sub_device_add()">添加</button>
+					</div>
+				</li>
+			</ul>
+
+			<ul class="mui-table-view peripherals_ul_style">
+				<li class="mui-table-view-cell">
+					<div class="peripherals_li_icon">
+						<label><span class="mui-icon device_iconfont icon-data_transmission"></span></label>
+					</div>
+
+					<div class="peripherals_li_name" id="per_device_name">
+						透传模式
+					</div>
+
+					<div id="data_transmission_switch" class="mui-switch mui-switch-blue peripherals_li_single_div_right">
+						<div class="mui-switch-handle"></div>
+					</div>
+				</li>
+			</ul>
+
+		</div>
+
+		<!--<div>
+			<ul class="mui-table-view peripherals_ul_style">
+				<li class="mui-table-view-cell">
+					<div class="peripherals_li_icon">
+						<label><span class="mui-icon device_iconfont icon-wendu"></span></label>
+					</div>
+
+					<div class="peripherals_li_name">
+						温度
+					</div>
+					<div class="peripherals_li_unit">
+						<span class="mui-badge mui-badge-warning">℃</span>
+					</div>
+
+					<div class="peripherals_li_data">
+						<span id="per_temperature_1">0</span>
+					</div>
+				</li>
+
+				<li class="mui-table-view-cell">
+					<div class="peripherals_li_icon">
+						<label><span class="mui-icon device_iconfont icon-shidu"></span></label>
+					</div>
+					<div class="peripherals_li_name">
+						湿度
+					</div>
+					<div class="peripherals_li_unit">
+						<span class="mui-badge mui-badge-warning ">%</span>
+					</div>
+					<div class="peripherals_li_data">
+						<span id="per_humidity_1">0</span>
+					</div>
+				</li>
+
+				<li class="mui-table-view-cell">
+					<div class="peripherals_li_icon">
+						<label><span class="mui-icon device_iconfont icon-sensor-guangzhao"></span></label>
+					</div>
+					<div class="peripherals_li_name">
+						光强
+					</div>
+					<div class="peripherals_li_unit">
+						<span class="mui-badge mui-badge-warning">flux</span>
+					</div>
+					<div class="peripherals_li_data">
+						<span id="per_light_1">0</span>
+					</div>
+				</li>
+
+				<li class="mui-table-view-cell">
+					<div class="peripherals_li_icon">
+						<label><span class="mui-icon device_iconfont icon-juli"></span></label>
+					</div>
+					<div class="peripherals_li_name">
+						距离
+					</div>
+					<div class="peripherals_li_unit">
+						<span class="mui-badge mui-badge-warning">mm</span>
+					</div>
+					<div class="peripherals_li_data">
+						<span id="per_infrared_1">0</span>
+					</div>
+				</li>
+			</ul>
+		</div>-->
+
+		<!--<div>
+			<ul class="mui-table-view peripherals_ul_style">
+				<li class="mui-table-view-cell">
+					<div class="peripherals_li_icon">
+						<label><span class="mui-icon device_iconfont icon-dianji"></span></label>
+					</div>
+
+					<div class="peripherals_li_name">
+						电机
+					</div>
+					<div id="per_switch_motor_1" class="mui-switch mui-switch-blue  peripherals_li_single_div_right">
+						<div class="mui-switch-handle"></div>
+					</div>
+				</li>
+			</ul>
+		</div>-->
+
+		<!--<div>
+			<ul class="mui-table-view peripherals_ul_style">
+				
+				<li class="mui-table-view-cell mui-collapse" style="background: white;">
+					<a class="mui-navigate-right">
+						<label><span class="mui-icon device_iconfont icon-dianyuan"></span></label>
+						转速
+					</a>
+
+					<div class="mui-collapse-content">
+						<div class=" mui-input-range" style="height: 30px;">
+							<input type="range" id='block-range' value="4" min="0" max="4">
+						</div>
+					</div>
+				</li>
+
+			</ul>
+		</div>-->
+
+		<!--<div>
+			<ul class="mui-table-view peripherals_ul_style">
+				<li class="mui-table-view-cell">
+					<div class="peripherals_li_icon">
+						<label><span class="mui-icon device_iconfont icon-liaotian"></span></label>
+					</div>
+					<div class="peripherals_li_name">
+						串口聊天
+					</div>
+					<div class="peripherals_li_single_div_right">
+						<span class="mui-icon mui-icon-arrowright"></span>
+					</div>
+				</li>
+				<li class="mui-table-view-cell" onclick="goto_rgb_html()">
+					<div class="peripherals_li_icon">
+						<label><span class="mui-icon device_iconfont icon-rgbled"></span></label>
+					</div>
+					<div class="peripherals_li_name">
+						三色灯
+					</div>
+					<div class="peripherals_li_single_div_right">
+						<span class="mui-icon mui-icon-arrowright"></span>
+					</div>
+				</li>
+			</ul>
+		</div>-->
+
+		<div id="template">
+			<br />
+			<h5 style="text-align: center;">请确保设备在线,点击下方按钮获取设备外设模板</h5>
+			<div class="mui-button-row">
+				<button type="button" class="mui-btn mui-btn-green" onclick="send_template_commands()">获取模板</button>
+			</div>
+		</div>
+
+		<div id="data_transmission_div" style="display: none;">
+			<div class="mui-input-row" style="margin: 10px 10px 0px 10px">
+					<textarea style="background: #FFFACD" id="recv_area" rows="8" placeholder="数据接收区域" disabled></textarea>
+			</div>
+			
+			<div>
+				<div class="mui-input-row" style="margin: 0px 10px 0px 10px">
+					<textarea  id="send_area" rows="4" placeholder="数据发送区域"></textarea>
+				</div>
+				
+				<div style="text-align: center;">
+					<button style="width: 100px;" type="button" class="mui-btn mui-btn-green" onclick="add_data_transmission_send()">发&nbsp;&nbsp;&nbsp;&nbsp;送</button>
+				</div>
+			</div>
+			
+		</div>
+
+		<script>
+			apiready = function() {
+				mico2 = api.require('mico2');
+
+				add_data_transmission(); //增加透传按钮监听
+
+				add_event_listener('resume', deal_resume_event); //重新回到应用则重新重新监听设备数据
+				
+				add_event_listener('mqtt_client_restart', listen_device); //重新回到应用则重新重新监听设备数据
+
+				add_event_listener('get_device_template', get_device_template);
+
+				peripherals_listen_keyback();
+
+				get_device_info(true); //监听设备数据
+			}
+		</script>
+
+	</body>
+
+</html>
