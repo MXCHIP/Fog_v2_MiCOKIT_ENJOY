@@ -51,6 +51,8 @@ static OSStatus fog_v2_subdevice_register(const char *s_product_id, const char *
     uint32_t index = 0;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
 
+    memset(&user_http_res, 0, sizeof(user_http_res));
+
     if ( fog_v2_is_have_superuser( ) == false )
     {
         app_log("[ERROR]gateway don't have superuser!");
@@ -87,6 +89,13 @@ start_subdevice_register:
     if(sub_device_queue_get(s_product_id, s_mac, device_id_temp) == false)
     {
         app_log("sub_device_queue_get() error!!!");
+
+        if(user_http_res.fog_response_body != NULL) //释放资源
+        {
+            free(user_http_res.fog_response_body);
+            user_http_res.fog_response_body = NULL;
+        }
+
         return kGeneralErr;
     }
 
@@ -94,6 +103,13 @@ start_subdevice_register:
     app_log("<===== sub_device_register success <======");
 
  exit:
+     if(user_http_res.fog_response_body != NULL) //释放资源
+     {
+         free(user_http_res.fog_response_body);
+         user_http_res.fog_response_body = NULL;
+     }
+
+
     if(err != kNoErr)
     {
         if ( (code == FOG_HTTP_PRODUCTI_ID_ERROR) || (code == FOG_HTTP_PRODUCTI_ID_NOT_SUB) || (code == FOG_HTTP_PRODUCTI_ID_NOT_GATEWAY))
@@ -127,6 +143,8 @@ static OSStatus fog_v2_subdevice_unregister(const char *s_product_id, const char
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     char *subdevice_id = NULL;
     uint32_t index = 0;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
     if ( get_sub_device_queue_index_by_mac( &index, s_product_id, s_mac ) == false )
     {
@@ -173,6 +191,12 @@ start_subdevice_unregister:
     app_log("<===== subdevice unregister success <======");
 
  exit:
+    if(user_http_res.fog_response_body != NULL) //释放资源
+    {
+        free(user_http_res.fog_response_body);
+        user_http_res.fog_response_body = NULL;
+    }
+
     if(err != kNoErr)
     {
         if ( (code == FOG_HTTP_PRODUCTI_ID_ERROR) || (code == FOG_HTTP_PRODUCTI_ID_NOT_SUB) || (code == FOG_HTTP_PRODUCTI_ID_NOT_GATEWAY))
@@ -205,6 +229,8 @@ static OSStatus fog_v2_subdevice_attach(const char *s_product_id, const char *s_
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     uint32_t index = 0;
     char *subdevice_id = NULL;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
     if(get_sub_device_queue_index_by_mac(&index, s_product_id, s_mac) == false)
     {
@@ -246,12 +272,25 @@ start_subdevice_attach:
 
             push_cmd_to_subdevice_queue(MQTT_CMD_SUB_UNBIND, subdevice_id);//发送消息给队列
 
+            if(user_http_res.fog_response_body != NULL) //释放资源
+            {
+                free(user_http_res.fog_response_body);
+                user_http_res.fog_response_body = NULL;
+            }
+
             return kGeneralErr;
         }else if ( (code == FOG_HTTP_PRODUCTI_ID_ERROR) || (code == FOG_HTTP_PRODUCTI_ID_NOT_SUB) || (code == FOG_HTTP_PRODUCTI_ID_NOT_GATEWAY))
         {
             app_log("subdevice product id is error! code = %ld", code);
             app_log("<===== subdevice attach error <======");
-            return err;
+
+            if(user_http_res.fog_response_body != NULL) //释放资源
+            {
+                free(user_http_res.fog_response_body);
+                user_http_res.fog_response_body = NULL;
+            }
+
+            return kGeneralErr;
         }
     }
 
@@ -259,6 +298,12 @@ start_subdevice_attach:
     app_log("<===== subdevice attach success <======");
 
  exit:
+     if(user_http_res.fog_response_body != NULL) //释放资源
+     {
+         free(user_http_res.fog_response_body);
+         user_http_res.fog_response_body = NULL;
+     }
+
     if(err != kNoErr)
     {
         app_log("subdeice attach error, send_status:%d, status_code:%ld", user_http_res.send_status, user_http_res.status_code);
@@ -284,6 +329,8 @@ static OSStatus fog_v2_subdevice_detach(const char *s_product_id, const char *s_
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     char *subdevice_id = NULL;
     uint32_t index = 0;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
     if(get_sub_device_queue_index_by_mac(&index, s_product_id, s_mac) == false)
     {
@@ -324,12 +371,25 @@ start_subdeice_detach:
 
             push_cmd_to_subdevice_queue(MQTT_CMD_SUB_UNBIND, subdevice_id);//发送消息给队列
 
+            if(user_http_res.fog_response_body != NULL) //释放资源
+            {
+                free(user_http_res.fog_response_body);
+                user_http_res.fog_response_body = NULL;
+            }
+
             return kGeneralErr;
         }else if ( (code == FOG_HTTP_PRODUCTI_ID_ERROR) || (code == FOG_HTTP_PRODUCTI_ID_NOT_SUB) || (code == FOG_HTTP_PRODUCTI_ID_NOT_GATEWAY))
         {
             app_log("subdevice product id is error! code = %ld", code);
             app_log("<===== subdevice detach error <======");
-            return err;
+
+            if(user_http_res.fog_response_body != NULL) //释放资源
+            {
+                free(user_http_res.fog_response_body);
+                user_http_res.fog_response_body = NULL;
+            }
+
+            return kGeneralErr;
         }
     }
 
@@ -337,6 +397,12 @@ start_subdeice_detach:
     app_log("<===== subdevice detach success <======");
 
  exit:
+     if(user_http_res.fog_response_body != NULL) //释放资源
+     {
+         free(user_http_res.fog_response_body);
+         user_http_res.fog_response_body = NULL;
+     }
+
     if(err != kNoErr)
     {
         app_log("subdeice deaach error, send_status:%d, status_code:%ld", user_http_res.send_status, user_http_res.status_code);
@@ -360,6 +426,8 @@ OSStatus fog_v2_subdevice_add_timeout(const char *s_product_id)
     char http_body[256] = {0};
     int32_t code = -1;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
 start_add_timeout:
     while(get_https_connect_status() == false)
@@ -386,6 +454,12 @@ start_add_timeout:
     app_log("<===== subdevice add timeout success <======");
 
  exit:
+     if(user_http_res.fog_response_body != NULL) //释放资源
+     {
+         free(user_http_res.fog_response_body);
+         user_http_res.fog_response_body = NULL;
+     }
+
     if(err != kNoErr)
     {
         app_log("subdeice add timeout error, send_status:%d, status_code:%ld", user_http_res.send_status, user_http_res.status_code);
@@ -408,6 +482,8 @@ OSStatus fog_v2_subdeice_get_list(char *http_response, uint32_t recv_len, bool *
     char http_body[256] = {0};
     int32_t code = -1;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
 start_get_list:
     while(get_https_connect_status() == false)
@@ -444,6 +520,12 @@ start_get_list:
     app_log("<===== subdevice get list success <======");
 
  exit:
+     if(user_http_res.fog_response_body != NULL) //释放资源
+     {
+         free(user_http_res.fog_response_body);
+         user_http_res.fog_response_body = NULL;
+     }
+
     if(err != kNoErr)
     {
         app_log("subdeice get list error, send_status:%d, status_code:%ld", user_http_res.send_status, user_http_res.status_code);
@@ -470,6 +552,8 @@ static OSStatus fog_v2_subdevice_send_event(const char *payload, const char *s_p
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     char *subdevice_id = NULL;
     uint32_t index = 0;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
     if(fog_v2_is_have_superuser() == false)
     {
@@ -524,6 +608,12 @@ start_sub_send_event:
 
  exit:
      user_free_json_obj(&send_json_object);
+
+     if(user_http_res.fog_response_body != NULL) //释放资源
+     {
+         free(user_http_res.fog_response_body);
+         user_http_res.fog_response_body = NULL;
+     }
 
     if(err != kNoErr)
     {
@@ -680,6 +770,8 @@ OSStatus fog_v2_add_subdevice( const char *s_product_id, const char *s_mac, bool
 {
     OSStatus err = kGeneralErr;
 
+    require_action(get_fog_des_g() != NULL, exit_fun, err = kGeneralErr);
+
     require_action((s_product_id != NULL && s_mac != NULL), exit, err = kGeneralErr);
 
     //子设备注册
@@ -706,6 +798,7 @@ OSStatus fog_v2_add_subdevice( const char *s_product_id, const char *s_mac, bool
         app_log("fog_v2_add_subdevice() failed, remove it now~");
     }
 
+    exit_fun:
     return err;
 }
 
@@ -716,6 +809,8 @@ OSStatus fog_v2_add_subdevice( const char *s_product_id, const char *s_mac, bool
 OSStatus fog_v2_remove_subdevice( const char *s_product_id, const char *s_mac )
 {
     OSStatus err = kGeneralErr;
+
+    require_action(get_fog_des_g() != NULL, exit, err = kGeneralErr);
 
     require_action((s_product_id != NULL && s_mac != NULL), exit, err = kGeneralErr);
 
@@ -760,6 +855,8 @@ OSStatus fog_v2_set_subdevice_status(const char *s_product_id, const char *s_mac
 {
     OSStatus err = kGeneralErr;
 
+    require_action(get_fog_des_g() != NULL, exit, err = kGeneralErr);
+
     require_action((s_product_id != NULL && s_mac != NULL), exit, err = kGeneralErr);
 
     if ( online == true )
@@ -791,6 +888,8 @@ OSStatus fog_v2_subdevice_send(const char *s_product_id, const char *s_mac, cons
 {
     OSStatus err = kGeneralErr;
 
+    require_action(get_fog_des_g() != NULL, exit, err = kGeneralErr);
+
     require_action((s_product_id != NULL && s_mac != NULL && payload != NULL), exit, err = kGeneralErr);
 
     err = fog_v2_subdevice_send_event(payload, s_product_id, s_mac, flag);
@@ -813,6 +912,8 @@ OSStatus fog_v2_subdevice_recv(const char *s_product_id, const char *s_mac, char
     uint32_t index = 0;
     SUBDEVICE_RECV_DATA_S *subdevice_recv_p = NULL;
     mico_queue_t *sub_device_queue_p = NULL;
+
+    require_action(get_fog_des_g() != NULL, exit, err = kGeneralErr);
 
     require_action( (s_mac != NULL && s_product_id != NULL && payload != NULL && payload_len != 0), exit, err = kGeneralErr );
 

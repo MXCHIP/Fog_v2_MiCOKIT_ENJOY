@@ -15,6 +15,10 @@
     #error "FOG_V2_HTTP_DOMAIN_NAME is not define"
 #endif
 
+#ifndef HTTP_REQ_LOG
+    #error "FOG_V2_HTTP_PORT_SSL is not define"
+#endif
+
 typedef struct _http_context_t{
   char *content;
   uint32_t content_length;
@@ -54,7 +58,7 @@ const char *fog_token = "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvc
 bool has_http_req_send = true;  //是否有http请求需要发送
 
 static FOG_HTTP_RESPONSE_SETTING_S fog_http_res; //全局变量 http响应的全局设置
-static char fog_http_requeset[HTTP_CLINET_REQUEST_LEN] = {0};
+static char *fog_http_requeset = NULL;
 
 mico_queue_t fog_http_request_queue = NULL;  //FOG HTTP的发送请求队列
 mico_queue_t fog_http_response_queue = NULL; //FOG HTTP的接收响应队列
@@ -99,13 +103,23 @@ static OSStatus http_queue_init(void)
 //根据fog_http_req来生成一个http请求,组合出一个字符串
 static OSStatus generate_fog_http_request(FOG_HTTP_REQUEST_SETTING_S *fog_http_req)
 {
-    //1.清空缓冲区
-    memset(fog_http_requeset, 0, sizeof(fog_http_requeset));
+    OSStatus err = kGeneralErr;
+    uint32_t http_req_all_len = strlen(fog_http_req->http_body) + 1024; //为head部分预留1024字节
+
+    fog_http_requeset = malloc( http_req_all_len );
+    if ( fog_http_requeset == NULL )
+    {
+        app_log("[ERROR]malloc error!!! malloc len is %ld", http_req_all_len);
+        return kGeneralErr;
+    }
+
+    memset(fog_http_requeset, 0, http_req_all_len);
 
     if(fog_http_req->method != HTTP_POST && fog_http_req->method != HTTP_GET)
     {
         app_log("http method error!");
-        return kGeneralErr;
+        err = kGeneralErr;
+        goto exit;
     }
 
     if(fog_http_req->method == HTTP_POST)
@@ -142,9 +156,7 @@ static OSStatus generate_fog_http_request(FOG_HTTP_REQUEST_SETTING_S *fog_http_r
         sprintf(fog_http_requeset + strlen(fog_http_requeset), "Content-Length: 0\r\n\r\n"); //增加Content-Length
     }
 
-#ifndef HTTP_REQ_LOG
-    #error "FOG_V2_HTTP_PORT_SSL is not define"
-#endif
+    err = kNoErr;
 
 #if (HTTP_REQ_LOG == 1)
     app_log("--------------------------------------");
@@ -152,14 +164,23 @@ static OSStatus generate_fog_http_request(FOG_HTTP_REQUEST_SETTING_S *fog_http_r
     app_log("--------------------------------------");
 #endif
 
-    return kNoErr;
+    exit:
+    if(err != kNoErr)
+    {
+        if(fog_http_requeset != NULL)
+        {
+            free(fog_http_requeset);
+            fog_http_requeset = NULL;
+        }
+    }
+
+    return err;
 }
 
 //给response的消息队列发送消息
 void send_response_to_queue(FOG_HTTP_RESPONSE_E status, uint32_t http_id, int32_t status_code, const char* response_body)
 {
     OSStatus err = kGeneralErr;
-    uint32_t body_len = 0;
     FOG_HTTP_RESPONSE_SETTING_S *fog_http_response_temp = NULL, *fog_http_res_p = NULL;
     static uint32_t local_id = 0;
 
@@ -172,23 +193,12 @@ void send_response_to_queue(FOG_HTTP_RESPONSE_E status, uint32_t http_id, int32_
     fog_http_res.http_res_id = http_id;
     fog_http_res.status_code = status_code;
 
-    memset(fog_http_res.fog_response_body, 0, sizeof(fog_http_res.fog_response_body));
+    fog_http_res.fog_response_body = malloc(strlen(response_body) + 2);
+    require_action_string(fog_http_res.fog_response_body != NULL, exit, err = kNoMemoryErr, "[ERROR]malloc() error!");
 
-    if(response_body == NULL)
-    {
-        memset(fog_http_res.fog_response_body, 0, sizeof(fog_http_res.fog_response_body));
-    }else
-    {
-       body_len = strlen(response_body);
-       if(body_len >= sizeof(fog_http_res.fog_response_body))
-       {
-           app_log("[error]response_body's len is too long");
-           memcpy(fog_http_res.fog_response_body, response_body, sizeof(fog_http_res.fog_response_body) - 10);
-       }else
-       {
-           memcpy(fog_http_res.fog_response_body, response_body, body_len);
-       }
-    }
+    memset(fog_http_res.fog_response_body, 0, strlen(response_body) + 2); //清0
+
+    memcpy(fog_http_res.fog_response_body, response_body, strlen(response_body));
 
     if(false == mico_rtos_is_queue_empty(&fog_http_response_queue))
     {
@@ -288,6 +298,8 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
 
     app_log("start connect");
 
+    //app_log("#####start connect#####:num_of_chunks:%d,allocted_memory:%d, free:%d, total_memory:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->allocted_memory, MicoGetMemoryInfo()->free_memory, MicoGetMemoryInfo()->total_memory);
+
     err = connect( http_fd, (struct sockaddr *)&addr, sizeof(addr) );
     require_noerr_action( err, exit, app_log("connect http server failed"));
 
@@ -318,6 +330,13 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
     }
 
     ret = ssl_send( client_ssl, fog_http_requeset, strlen((const char *)fog_http_requeset) );       /* Send HTTP Request */
+
+    if(fog_http_requeset != NULL) //释放发送缓冲区
+    {
+        free(fog_http_requeset);
+        fog_http_requeset = NULL;
+    }
+
     if(ret > 0)
     {
        //app_log("ssl_send success [%d] [%d]", strlen((const char *)fog_http_requeset) ,ret);
@@ -428,6 +447,12 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
     mico_thread_msleep(50);
     system_log("#####https disconnect#####:num_of_chunks:%d, free:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->free_memory);
     goto HTTP_SSL_START;
+
+    if(fog_http_requeset != NULL)
+    {
+        free(fog_http_requeset);
+        fog_http_requeset = NULL;
+    }
 
     app_log( "Exit: Client exit with err = %d, fd:%d", err, http_fd );
     mico_rtos_delete_thread(NULL);

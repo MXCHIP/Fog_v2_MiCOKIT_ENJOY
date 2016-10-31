@@ -92,6 +92,12 @@ FOG_DES_S *get_fog_des_g(void)
 //返回值：true - 有超级用户，flase - 无超级用户
 bool fog_v2_is_have_superuser(void)
 {
+    if(fog_v2_sdk_init_success == false)
+    {
+        app_log("fog sdk is not init!");
+        return false;
+    }
+
     return fog_des_g->is_hava_superuser;
 }
 
@@ -112,6 +118,12 @@ bool fog_v2_is_mqtt_connect(void)
 //返回值：无
 void fog_v2_set_device_recovery_flag(void)
 {
+    if(fog_v2_sdk_init_success == false)
+    {
+        app_log("fog sdk is not init!");
+        return;
+    }
+
     app_log("[NOTICE]device unbind!!");
     mico_rtos_thread_msleep(10);
     fog_des_g->is_recovery = true;
@@ -398,6 +410,13 @@ OSStatus get_http_res_from_queue(FOG_HTTP_RESPONSE_SETTING_S *http_res, uint32_t
 
     res_body_len = strlen(fog_http_res_p->fog_response_body);
 
+    if(res_body_len == 0)
+    {
+        app_log("[error]get data is len is 0");
+        err = kGeneralErr;
+        goto exit;
+    }
+
     if((fog_http_res_p->fog_response_body[0] != '{') || fog_http_res_p->fog_response_body[res_body_len - 1] != '}') //JSON格式检查
     {
         app_log("[error]get data is not JSON format!");
@@ -631,12 +650,14 @@ OSStatus check_http_body_code(int32_t code)
     {
         while(1)
         {
+            app_log("[ERROR]code = %ld, refesh token!", code);
+
             if(fog_v2_device_get_token() == kNoErr)  //从新获取token 密码用的还是旧的保证MQTT不会有问题
             {
                 break;
             }else
             {
-                mico_thread_msleep(100);
+                mico_thread_msleep(200);
             }
         }
         return kOptionErr;
@@ -656,6 +677,8 @@ static OSStatus fog_v2_device_activate(void)
     char http_body[256] = {0};
     int32_t code = -1;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
     if((fog_des_g->is_activate == true))
     {
@@ -691,6 +714,12 @@ static OSStatus fog_v2_device_activate(void)
     app_log("<===== device_activate success <======");
 
  exit:
+     if(user_http_res.fog_response_body != NULL) //释放资源
+     {
+         free(user_http_res.fog_response_body);
+         user_http_res.fog_response_body = NULL;
+     }
+
     if(err != kNoErr)
     {
         if ( (code == FOG_HTTP_PRODUCTI_ID_ERROR) || (code == FOG_HTTP_PRODUCTI_ID_NOT_SUB) || (code == FOG_HTTP_PRODUCTI_ID_NOT_GATEWAY))
@@ -714,75 +743,75 @@ static OSStatus fog_v2_device_activate(void)
 }
 
 //设备获取授权
-static OSStatus fog_v2_device_get_token(void)
+static OSStatus fog_v2_device_get_token( void )
 {
     OSStatus err = kGeneralErr;
     const char* device_get_token_body = "{\"deviceid\":\"%s\",\"password\":\"%s\"}";
-    char http_body[256] = {0};
+    char http_body[256] = { 0 };
     int32_t code = -1;
-    FOG_HTTP_RESPONSE_SETTING_S *user_http_res = NULL;
+    FOG_HTTP_RESPONSE_SETTING_S user_http_res;
 
- start_get_token:
-    while(get_https_connect_status() == false)
+    memset( &user_http_res, 0, sizeof(user_http_res) );
+
+    start_get_token:
+    while ( get_https_connect_status( ) == false )
     {
         app_log("https disconnect, fog_v2_device_get_token is waitting...");
-        mico_thread_msleep(200);
+        mico_thread_msleep( 200 );
     }
 
-    sprintf(http_body, device_get_token_body, fog_des_g->device_id, fog_des_g->devicepw);
+    sprintf( http_body, device_get_token_body, fog_des_g->device_id, fog_des_g->devicepw );
 
     app_log("=====> device_get_token send ======>");
 
-    user_http_res = (FOG_HTTP_RESPONSE_SETTING_S *)malloc(sizeof(FOG_HTTP_RESPONSE_SETTING_S));
-    require_action(user_http_res != NULL, exit, err = kNoMemoryErr);
-
-    memset(user_http_res, 0, sizeof(FOG_HTTP_RESPONSE_SETTING_S));
-
-    err = fog_v2_push_http_req_mutex(false, FOG_V2_GET_TOKEN_METHOD, FOG_V2_GET_TOKEN_URI, FOG_V2_HTTP_DOMAIN_NAME, http_body, user_http_res);
+    err = fog_v2_push_http_req_mutex( false, FOG_V2_GET_TOKEN_METHOD, FOG_V2_GET_TOKEN_URI, FOG_V2_HTTP_DOMAIN_NAME, http_body, &user_http_res );
     require_noerr( err, exit );
 
     //处理返回结果
-    err = process_response_body_string(user_http_res->fog_response_body, &code, "token", fog_des_g->device_token, sizeof(fog_des_g->device_token));
+    err = process_response_body_string( user_http_res.fog_response_body, &code, "token", fog_des_g->device_token, sizeof(fog_des_g->device_token) );
     require_noerr( err, exit );
 
-    free(user_http_res); //释放资源
-    user_http_res = NULL;
-
-    if(code == FOG_HTTP_PASSSWORD_ERROR)
+    if ( code == FOG_HTTP_PASSSWORD_ERROR )
     {
         fog_des_g->is_activate = false;
-        fog_v2_device_activate();
-        mico_system_context_update(mico_system_context_get());
+        fog_v2_device_activate( );
+        mico_system_context_update( mico_system_context_get( ) );
+
+        if ( user_http_res.fog_response_body != NULL ) //释放资源
+        {
+            free( user_http_res.fog_response_body );
+            user_http_res.fog_response_body = NULL;
+        }
 
         goto start_get_token;
-    }else if(code == FOG_HTTP_SUCCESS)
+    } else if ( code == FOG_HTTP_SUCCESS )
     {
-        err = mico_system_context_update(mico_system_context_get());
+        err = mico_system_context_update( mico_system_context_get( ) );
         require_noerr( err, exit );
 
         app_log("token:%s,device_id:%s,pw:%s", fog_des_g->device_token, fog_des_g->device_id, fog_des_g->devicepw);
         app_log("<===== device_get_token success <======");
-    }else
+    } else
     {
         err = kGeneralErr;
         goto exit;
     }
 
- exit:
-    if ( user_http_res != NULL )
+    exit:
+    if ( user_http_res.fog_response_body != NULL ) //释放资源
     {
-        free( user_http_res ); //释放资源
-        user_http_res = NULL;
+        free( user_http_res.fog_response_body );
+        user_http_res.fog_response_body = NULL;
     }
 
-    if(err != kNoErr)
+    if ( err != kNoErr )
     {
-        memset(fog_des_g->device_token, 0, sizeof(fog_des_g->device_token));
-        mico_system_context_update(mico_system_context_get());
+        memset( fog_des_g->device_token, 0, sizeof(fog_des_g->device_token) );
+        mico_system_context_update( mico_system_context_get( ) );
 
         app_log("<===== device_get_token error <======");
 
-        mico_thread_msleep(200);
+        mico_thread_msleep( 200 );
         goto start_get_token;
     }
 
@@ -790,57 +819,51 @@ static OSStatus fog_v2_device_get_token(void)
 }
 
 //检查超级用户
-static OSStatus fog_v2_device_check_superuser(void)
+static OSStatus fog_v2_device_check_superuser( void )
 {
     OSStatus err = kGeneralErr;
     int32_t code = -1;
-    FOG_HTTP_RESPONSE_SETTING_S *user_http_res = NULL;
+    FOG_HTTP_RESPONSE_SETTING_S user_http_res;
 
- start_check_superuser:
-    while(get_https_connect_status() == false)
+    memset(&user_http_res, 0, sizeof(user_http_res));
+
+    start_check_superuser:
+    while ( get_https_connect_status( ) == false )
     {
         app_log("https disconnect, fog_v2_device_check_superuser is waitting...");
-        mico_thread_msleep(200);
+        mico_thread_msleep( 200 );
     }
 
     app_log("=====> device_check_superuser send ======>");
 
-    user_http_res = (FOG_HTTP_RESPONSE_SETTING_S *)malloc(sizeof(FOG_HTTP_RESPONSE_SETTING_S));
-    require_action(user_http_res != NULL, exit, err = kNoMemoryErr);
-
-    memset(user_http_res, 0, sizeof(FOG_HTTP_RESPONSE_SETTING_S));
-
-    err = fog_v2_push_http_req_mutex(true, FOG_V2_CHECK_SUPERUSER_METHOD, FOG_V2_CHECK_SUPERUSER_URI, FOG_V2_HTTP_DOMAIN_NAME, NULL, user_http_res);
+    err = fog_v2_push_http_req_mutex( true, FOG_V2_CHECK_SUPERUSER_METHOD, FOG_V2_CHECK_SUPERUSER_URI, FOG_V2_HTTP_DOMAIN_NAME, NULL, &user_http_res );
     require_noerr( err, exit );
 
     //处理返回结果
-    err = process_response_body_bool(user_http_res->fog_response_body, &code, "CheckDeviceSuperUser", &(fog_des_g->is_hava_superuser));
+    err = process_response_body_bool( user_http_res.fog_response_body, &code, "CheckDeviceSuperUser", &(fog_des_g->is_hava_superuser) );
     require_noerr( err, exit );
 
-    free(user_http_res); //释放资源
-    user_http_res = NULL;
-
-    err = check_http_body_code(code);   //如果是token过期是错误问题，函数内部会处理完成之后再返回
+    err = check_http_body_code( code );   //如果是token过期是错误问题，函数内部会处理完成之后再返回
     require_noerr( err, exit );
 
     app_log("is_hava_superuser = %s", (fog_des_g->is_hava_superuser == true) ? "true" : "false");
     app_log("<===== device_check_superuser success <======");
 
- exit:
-    if ( user_http_res != NULL )
+    exit:
+    if ( user_http_res.fog_response_body != NULL ) //替底层释放资源
     {
-        free( user_http_res ); //释放资源
-        user_http_res = NULL;
+        free( user_http_res.fog_response_body );
+        user_http_res.fog_response_body = NULL;
     }
 
     if ( err != kNoErr )
     {
         fog_des_g->is_hava_superuser = false;
-        mico_system_context_update(mico_system_context_get());
+        mico_system_context_update( mico_system_context_get( ) );
 
         app_log("<===== device_check_superuser error <======");
 
-        mico_thread_msleep(200);
+        mico_thread_msleep( 200 );
         goto start_check_superuser;
     }
 
@@ -855,6 +878,8 @@ static OSStatus fog_v2_device_recovery(void)
     const char* device_recovery_body = "{\"deviceid\":\"%s\"}";
     char http_body[256] = {0};
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
  start_recovery:
     while(get_https_connect_status() == false)
@@ -890,6 +915,12 @@ static OSStatus fog_v2_device_recovery(void)
     app_log("<===== device_recovery success <======");
 
  exit:
+    if ( user_http_res.fog_response_body != NULL ) //释放资源
+    {
+        free( user_http_res.fog_response_body );
+        user_http_res.fog_response_body = NULL;
+    }
+
     if(err != kNoErr)
     {
         app_log("<===== device_recovery error <======");
@@ -909,6 +940,8 @@ static OSStatus fog_v2_device_sync_status(void)
     const char* device_sync_status_body = "{\"product_id\":\"%s\",\"moduletype\":\"%s\",\"firmware\":\"%s\",\"mico\":\"%s\"}";
     char http_body[256] = {0};
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
  start_sync_status:
     while(get_https_connect_status() == false)
@@ -931,10 +964,15 @@ static OSStatus fog_v2_device_sync_status(void)
     err = check_http_body_code(code);   //如果是token过期是错误问题，函数内部会处理完成之后再返回
     require_noerr( err, exit );
 
-    //app_log("sync status success:%s", http_body);
     app_log("<===== device_sync_status success <======");
 
  exit:
+    if ( user_http_res.fog_response_body != NULL ) //释放资源
+    {
+        free( user_http_res.fog_response_body );
+        user_http_res.fog_response_body = NULL;
+    }
+
     if(err != kNoErr)
     {
         app_log("<===== device_sync_status error <======");
@@ -955,6 +993,8 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
     const char *ota_ckeck_body = "{\"product_id\":\"%s\",\"firmware_type\":\"%s\",\"modulename\":\"%s\",\"firmware\":\"%s\"}";
     char http_body[512] = {0};
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
     *need_update = false;
 
@@ -1000,12 +1040,17 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
             {
                 memcpy(resoponse_body, user_http_res.fog_response_body, strlen(user_http_res.fog_response_body));
                 *need_update = true;
-                //app_log("[OK]copy response body to buff");
             }
         }
     }
 
  exit:
+    if ( user_http_res.fog_response_body != NULL ) //释放资源
+    {
+        free( user_http_res.fog_response_body );
+        user_http_res.fog_response_body = NULL;
+    }
+
     if(err != kNoErr)
     {
         need_update = false;
@@ -1029,6 +1074,8 @@ OSStatus fog_v2_ota_upload_log(void)
     char http_body[512] = {0};
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
 
+    memset(&user_http_res, 0, sizeof(user_http_res));
+
  start_ota_upload_log:
     while(get_https_connect_status() == false)
     {
@@ -1039,8 +1086,6 @@ OSStatus fog_v2_ota_upload_log(void)
     sprintf(http_body, ota_upload_log_body, fog_des_g->device_id, fog_des_g->firmware, fog_des_g->module_type);
 
     app_log("=====> ota upload log send ======>");
-
-    app_log("body:%s", http_body);
 
     err = fog_v2_push_http_req_mutex(true, FOG_V2_OTA_UPLOAD_LOG, FOG_V2_OTA_UPLOAD_URI, FOG_V2_HTTP_DOMAIN_NAME, http_body, &user_http_res);
     require_noerr( err, exit );
@@ -1056,6 +1101,12 @@ OSStatus fog_v2_ota_upload_log(void)
     app_log("<===== ota upload log success <======");
 
  exit:
+     if(user_http_res.fog_response_body != NULL) //释放资源
+     {
+         free(user_http_res.fog_response_body);
+         user_http_res.fog_response_body = NULL;
+     }
+
     if(err != kNoErr)
     {
         app_log("<===== ota upload log error <======");
@@ -1073,8 +1124,10 @@ OSStatus fog_v2_device_generate_device_vercode(void)
 {
     OSStatus err = kGeneralErr;
     int32_t code = -1;
-    FOG_HTTP_RESPONSE_SETTING_S *user_http_res = NULL;
+    FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     char http_body[64] = "{\"callback\":true}";
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
 
  start_generate_device_vercode:
     while(get_https_connect_status() == false)
@@ -1085,29 +1138,23 @@ OSStatus fog_v2_device_generate_device_vercode(void)
 
     app_log("=====> generate_device_vercode send ======>");
 
-    user_http_res = (FOG_HTTP_RESPONSE_SETTING_S *)malloc(sizeof(FOG_HTTP_RESPONSE_SETTING_S));
-    require_action(user_http_res != NULL, exit, err = kNoMemoryErr);
-
-    memset(user_http_res, 0, sizeof(FOG_HTTP_RESPONSE_SETTING_S));
-
-    err = fog_v2_push_http_req_mutex(true, FOG_V2_GENERATE_VERCODE_METHOD, FOG_V2_GENERATE_VERCODE_URI, FOG_V2_HTTP_DOMAIN_NAME, http_body, user_http_res);
+    err = fog_v2_push_http_req_mutex(true, FOG_V2_GENERATE_VERCODE_METHOD, FOG_V2_GENERATE_VERCODE_URI, FOG_V2_HTTP_DOMAIN_NAME, http_body, &user_http_res);
     require_noerr( err, exit );
 
     //处理返回结果
-    err = process_response_body_string(user_http_res->fog_response_body, &code, "vercode", fog_des_g->vercode, sizeof(fog_des_g->vercode));
+    err = process_response_body_string(user_http_res.fog_response_body, &code, "vercode", fog_des_g->vercode, sizeof(fog_des_g->vercode));
     require_noerr( err, exit );
-
-    free(user_http_res); //释放资源
-    user_http_res = NULL;
 
     if(code == FOG_HTTP_DEVICE_HAVE_SUPER_USER)  //可能会发现已经有超级用户
     {
         app_log("device already have superuser! set Bonjour");
+        app_log("<===== generate_device_vercode error <======");
         fog_v2_device_check_superuser();
         stop_fog_bonjour();
         start_fog_bonjour(false, fog_des_g);   //开启bonjour
 
-        return kGeneralErr;
+        err = kNoErr;
+        goto exit;
     }
 
     err = check_http_body_code(code);   //如果是token过期是错误问题，函数内部会处理完成之后再返回
@@ -1117,11 +1164,11 @@ OSStatus fog_v2_device_generate_device_vercode(void)
     app_log("<===== generate_device_vercode success <======");
 
  exit:
-    if ( user_http_res != NULL )
-    {
-        free( user_http_res );
-        user_http_res = NULL;
-    }
+     if(user_http_res.fog_response_body != NULL) //释放资源
+     {
+         free(user_http_res.fog_response_body);
+         user_http_res.fog_response_body = NULL;
+     }
 
     if ( err != kNoErr )
     {
@@ -1151,6 +1198,14 @@ OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag)
     char *http_body = NULL;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
 
+    memset(&user_http_res, 0, sizeof(user_http_res));
+
+    if(fog_v2_sdk_init_success == false)
+    {
+        app_log("fog sdk is not init!");
+        return kGeneralErr;
+    }
+
     if(strlen(payload) >= FOG_V2_PAYLOAD_LEN_MAX)
     {
         app_log("[ERROR]payload is too long!");
@@ -1178,29 +1233,31 @@ OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag)
     err = fog_v2_push_http_req_mutex(true, FOG_V2_SEND_EVENT_METHOD, FOG_V2_SEND_EVENT_URI, FOG_V2_HTTP_DOMAIN_NAME, http_body, &user_http_res);
     require_noerr( err, exit );
 
-    user_free_json_obj(&send_json_object);
-
     //处理返回结果
     err = process_response_body(user_http_res.fog_response_body, &code);
     require_noerr( err, exit );
 
     err = check_http_body_code(code);   //如果是token过期是错误问题，函数内部会刷新完一次token之后再返回
-    if(err == kOptionErr)  //如果是token问题
-    {
-        user_free_json_obj(&send_json_object);
-        goto start_send_event;
-    }
+    require_noerr_string(err, exit, "check_http_body_code() error");
 
     app_log("<===== send_event success <======");
 
  exit:
     user_free_json_obj(&send_json_object);
+
+    if(user_http_res.fog_response_body != NULL) //释放资源
+    {
+        free(user_http_res.fog_response_body);
+        user_http_res.fog_response_body = NULL;
+    }
+
     if(err != kNoErr)
     {
         app_log("deviceid:%s, pw:%s, token: %s",fog_des_g->device_id, fog_des_g->devicepw, fog_des_g->device_token);
 
         app_log("<===== send_event error <======");
         mico_thread_msleep(100);
+        goto start_send_event;
     }
 
     return err;
@@ -1350,7 +1407,7 @@ OSStatus start_fog_v2_service(void)
     require_noerr( err, exit );
 
     /* Create a new thread */
-    err = mico_rtos_create_thread( NULL, MICO_APPLICATION_PRIORITY, "fog_init", fog_init, 0x1800, (uint32_t)NULL );
+    err = mico_rtos_create_thread( NULL, MICO_APPLICATION_PRIORITY, "fog_init", fog_init, 0x1000, (uint32_t)NULL );
     require_noerr_string( err, exit, "ERROR: Unable to start the fog_init thread" );
 
     mico_rtos_get_semaphore( &fog_v2_init_complete_sem, MICO_WAIT_FOREVER ); //wait until get semaphore

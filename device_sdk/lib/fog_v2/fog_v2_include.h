@@ -101,6 +101,7 @@ OSStatus fog_v2_subdevice_recv(const char *s_product_id, const char *s_mac, char
 //事件类型一共有三种
 //MQTT_CMD_GATEWAY_UNBIND   网关设备被解绑(s_product_id和s_mac无效)
 //MQTT_CMD_GATEWAY_BIND     网关设备被绑定(s_product_id和s_mac无效)
+//MQTT_CMD_SUB_UNBIND       字设备被解绑(s_product_id和s_mac有效)
 //参数： s_product_id - 子设备产品ID
 //参数： s_mac - 子设备MAC地址
 //返回值：无

@@ -40,17 +40,17 @@ OSStatus process_fog_v2_mqtt_cmd(const char *cmd_payload)
 
     code = json_object_get_int( code_json_obj );
 
+    data_json_obj = json_object_object_get( http_body_json_obj, "data" );
+    require_string( code_json_obj != NULL, exit, "get data error!" );
+
+    deviceid_json_obj = json_object_object_get( data_json_obj, "deviceid" );
+    require_string( code_json_obj != NULL, exit, "get deviceid error!" );
+
+    cmd_deviceid = json_object_get_string(deviceid_json_obj); //字符串类型
+    require_string(cmd_deviceid != NULL, exit, "get user_key_obj error!");
+
     if(code == FOG_MQTT_CMD_UNBIND)
     {
-        data_json_obj = json_object_object_get( http_body_json_obj, "data" );
-        require_string( code_json_obj != NULL, exit, "get data error!" );
-
-        deviceid_json_obj = json_object_object_get( data_json_obj, "deviceid" );
-        require_string( code_json_obj != NULL, exit, "get deviceid error!" );
-
-        cmd_deviceid = json_object_get_string(deviceid_json_obj); //字符串类型
-        require_string(cmd_deviceid != NULL, exit, "get user_key_obj error!");
-
         if ( strcmp( cmd_deviceid, get_fog_des_g( )->device_id ) == 0 ) //先判断ID是否为父设备ID
         {
             get_fog_des_g( )->is_hava_superuser = false;

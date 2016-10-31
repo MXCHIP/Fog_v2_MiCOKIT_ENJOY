@@ -108,6 +108,7 @@ void init_fog_mqtt_service( void )
     /* get free memory */
     app_log("num_of_chunks:%d,allocted_memory:%d, free:%d, total_memory:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->allocted_memory, MicoGetMemoryInfo()->free_memory, MicoGetMemoryInfo()->total_memory);
 
+#if (FOG_V2_USE_SUB_DEVICE == 1)
     err = mico_rtos_init_mutex( &(mqtt_sub_settings.mutex) );
     require_noerr( err, exit );
 
@@ -125,7 +126,7 @@ void init_fog_mqtt_service( void )
 
     err = mico_rtos_init_semaphore( &mqtt_unsub_settings.finish_sem, 1 ); //0/1 binary semaphore || 0/N semaphore
     require_noerr( err, exit );
-
+#endif
     /* Create application context */
     mqtt_context = (mqtt_context_t *) calloc( 1, sizeof(mqtt_context_t) );
     require_action( mqtt_context, exit, err = kNoMemoryErr );
@@ -548,6 +549,7 @@ OSStatus fog_v2_device_recv_command( char *payload, uint32_t payload_len, uint32
     OSStatus err = kUnknownErr;
     p_mqtt_recv_msg_t p_recv_msg = NULL;
 
+    require_action( mqtt_context != NULL, exit, err = kGeneralErr );
     require_action( payload != NULL, exit, err = kGeneralErr );
 
     memset(payload, 0, payload_len);

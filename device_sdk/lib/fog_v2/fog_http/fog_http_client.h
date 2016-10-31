@@ -3,7 +3,6 @@
 
 #define HTTP_YIELD_TMIE                 (2*1000) //http超时时间
 
-#define HTTP_CLINET_REQUEST_LEN         (3072)
 #define HTTP_REQUEST_BODY_MAX_LEN       (2048)
 #define HTTP_REQUEST_HOST_NAME_MAX_LEN  (64)
 #define HTTP_REQUEST_REQ_URI_MAX_LEN    (64)
@@ -33,7 +32,7 @@ typedef struct _FOG_HTTP_RESPONSE_SETTING
     FOG_HTTP_RESPONSE_E send_status;    //发送状态
     uint32_t http_res_id;
     int32_t status_code;                //http错误码
-    char fog_response_body[HTTP_RESPONSE_BODY_MAX_LEN];
+    char *fog_response_body;
 }FOG_HTTP_RESPONSE_SETTING_S;
 
 
