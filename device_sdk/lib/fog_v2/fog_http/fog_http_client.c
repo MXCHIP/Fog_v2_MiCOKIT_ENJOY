@@ -132,7 +132,9 @@ static OSStatus generate_fog_http_request(FOG_HTTP_REQUEST_SETTING_S *fog_http_r
 
     sprintf(fog_http_requeset + strlen(fog_http_requeset), "Host: %s\r\n", fog_http_req->host_name); //增加hostname
 
-    sprintf(fog_http_requeset + strlen(fog_http_requeset), "Content-Type: application/json\r\nConnection: keep-alive\r\n"); //增加Content-Type和Connection设置
+    sprintf(fog_http_requeset + strlen(fog_http_requeset), "Content-Type: application/json\r\nConnection: Keepalive\r\n"); //增加Content-Type和Connection设置
+    //sprintf(fog_http_requeset + strlen(fog_http_requeset), "Content-Type: application/json\r\n"); //增加Content-Type和Connection设置
+    //sprintf(fog_http_requeset + strlen(fog_http_requeset), "Content-Type: application/json\r\nConnection: Close\r\n"); //增加Content-Type和Connection设置
 
     if(fog_http_req->is_jwt == true)
     {
@@ -193,12 +195,18 @@ void send_response_to_queue(FOG_HTTP_RESPONSE_E status, uint32_t http_id, int32_
     fog_http_res.http_res_id = http_id;
     fog_http_res.status_code = status_code;
 
-    fog_http_res.fog_response_body = malloc(strlen(response_body) + 2);
-    require_action_string(fog_http_res.fog_response_body != NULL, exit, err = kNoMemoryErr, "[ERROR]malloc() error!");
+    if(response_body != NULL)
+    {
+        fog_http_res.fog_response_body = malloc(strlen(response_body) + 2);
+        require_action_string(fog_http_res.fog_response_body != NULL, exit, err = kNoMemoryErr, "[ERROR]malloc() error!");
 
-    memset(fog_http_res.fog_response_body, 0, strlen(response_body) + 2); //清0
+        memset(fog_http_res.fog_response_body, 0, strlen(response_body) + 2); //清0
 
-    memcpy(fog_http_res.fog_response_body, response_body, strlen(response_body));
+        memcpy(fog_http_res.fog_response_body, response_body, strlen(response_body));
+    }else
+    {
+        fog_http_res.fog_response_body = NULL;
+    }
 
     if(false == mico_rtos_is_queue_empty(&fog_http_response_queue))
     {
@@ -427,7 +435,6 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
 
     HTTPHeaderClear( httpHeader );
     app_log("#####https connect#####:num_of_chunks:%d, free:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->free_memory);
-    set_https_connect_status(true);
     goto SSL_SEND;
 
  exit:

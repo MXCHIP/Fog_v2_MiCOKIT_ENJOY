@@ -34,7 +34,7 @@ static bool http_read_file_success = false;
 
 const char *device_ota_download = "GET /%s HTTP/1.1\r\n\
 Host: %s\r\n\
-Connection: keep-alive\r\n\
+Connection: Keepalive\r\n\
 Range: bytes=%d-\r\n\
 Accept-Encoding: identity\r\n\r\n";
 
