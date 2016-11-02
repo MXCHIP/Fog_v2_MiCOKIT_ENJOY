@@ -38,6 +38,21 @@ Connection: Keepalive\r\n\
 Range: bytes=%d-\r\n\
 Accept-Encoding: identity\r\n\r\n";
 
+//字符串中内容小写转大写 IAR的string.h中无此函数 手动实现
+static unsigned char* user_strupr(unsigned char* szMsg)
+{
+    unsigned char *pcMsg = NULL;
+
+    for (pcMsg = szMsg; ('\0' != *pcMsg); pcMsg++)
+    {
+        if (('a' <= *pcMsg) && (*pcMsg <= 'z'))
+        {
+            *pcMsg += ('A' - 'a');
+        }
+    }
+
+    return szMsg;
+}
 
 //src:输入    dest:输出     dest_size:最大输出长度
 bool user_str2hex(unsigned char *src, uint8_t *dest, uint32_t dest_size)
@@ -50,7 +65,7 @@ bool user_str2hex(unsigned char *src, uint8_t *dest, uint32_t dest_size)
     if ( (src_size % 2 != 0) || (src_size <= 0))
         return false;
 
-    src = (unsigned char *) strupr((char *) src );
+    src = user_strupr( src );
 
     for ( i = 0; i < src_size; i ++ )
     {

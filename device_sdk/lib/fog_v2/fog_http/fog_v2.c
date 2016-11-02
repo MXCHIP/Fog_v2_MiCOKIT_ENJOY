@@ -43,6 +43,7 @@ bool fog_v2_is_have_superuser(void);
 bool fog_v2_is_https_connect(void);
 bool fog_v2_is_mqtt_connect(void);
 
+OSStatus init_fog_v2_service(void);
 
 static void fog_init(mico_thread_arg_t arg);
 static OSStatus fog_des_init(void);
@@ -118,7 +119,7 @@ bool fog_v2_is_mqtt_connect(void)
 //返回值：无
 void fog_v2_set_device_recovery_flag(void)
 {
-    if(fog_v2_sdk_init_success == false)
+    if(get_fog_des_g() == NULL)
     {
         app_log("fog sdk is not init!");
         return;
@@ -271,16 +272,31 @@ bool check_fog_des_settings(void)
     return true;
 }
 
-
-//结构体初始化
-OSStatus fog_des_init(void)
+//fog v2初始化 借用mico系统为用户维护的flash区域作存储用
+OSStatus init_fog_v2_service(void)
 {
     OSStatus err = kGeneralErr;
     mico_Context_t* context = NULL;
 
     context = mico_system_context_get();
+    require_action_string(context != NULL, exit, err = kGeneralErr,"[ERROR]context is NULL!!!");
 
     fog_des_g = (FOG_DES_S *)(context->user_config_data);
+
+    err = kNoErr;
+
+exit:
+    return err;
+}
+
+
+//结构体初始化
+static OSStatus fog_des_init(void)
+{
+    OSStatus err = kGeneralErr;
+
+    err = init_fog_v2_service();
+    require_noerr( err, exit );
 
     if(false == check_fog_des_settings())
     {
@@ -294,8 +310,12 @@ OSStatus fog_des_init(void)
 
  exit:
     app_log("fog_des_init error");
-    memset(fog_des_g, 0, sizeof(FOG_DES_S));   //全局变量清空
-    mico_system_context_update(mico_system_context_get());
+
+    if(fog_des_g != NULL)
+    {
+        memset(fog_des_g, 0, sizeof(FOG_DES_S));   //全局变量清空
+        mico_system_context_update(mico_system_context_get());
+    }
 
     return kGeneralErr;
 }
@@ -1009,7 +1029,7 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
 
     app_log("=====> ota check send ======>");
 
-    err = fog_v2_push_http_req_mutex(true, FOG_V2_OTA_UP_DATA_CHECK, FOG_V2_OTA_UP_DATA_URI, FOG_V2_HTTP_DOMAIN_NAME, http_body, &user_http_res);
+    err = fog_v2_push_http_req_mutex(false, FOG_V2_OTA_UP_DATA_CHECK, FOG_V2_OTA_UP_DATA_URI, FOG_V2_HTTP_DOMAIN_NAME, http_body, &user_http_res);
     require_noerr( err, exit );
 
     //处理返回结果
@@ -1323,6 +1343,11 @@ static void fog_init(mico_thread_arg_t arg)
 
     fog_des_g->is_activate = false;
 
+#if (FOG_V2_OTA_ENABLE == 1)
+    //0.OTA检查
+    fog_v2_ota();
+#endif
+
     //1.设备激活
     err = fog_v2_device_activate();
     require_noerr( err, exit );
@@ -1342,17 +1367,12 @@ static void fog_init(mico_thread_arg_t arg)
         goto start_fog_init;
     }
 
-#if (FOG_V2_OTA_ENABLE == 1)
-    //4.OTA检查
-    fog_v2_ota();
-#endif
-
 #if (FOG_V2_USE_SUB_DEVICE == 1)
     err = fog_v2_subdevice_des_init();
     require_noerr( err, exit );
 #endif
 
-    //5.开启MQTT后台服务
+    //4.开启MQTT后台服务
     init_fog_mqtt_service();
 
     while(fog_des_g->is_mqtt_connect == false) //等待MQTT连接完成
@@ -1362,22 +1382,22 @@ static void fog_init(mico_thread_arg_t arg)
 
     app_log("mqtt connect ok.....");
 
-     //6.检查超级用户
+     //5.检查超级用户
     err = fog_v2_device_check_superuser();  //刚刷新完token,token不可能会失效
     require_noerr( err, exit );
 
     stop_fog_bonjour();
     start_fog_bonjour(false, fog_des_g);   //开启bonjour
 
-    //7.同步设备版本、硬件型号到云端
+    //6.同步设备版本、硬件型号到云端
     err = fog_v2_device_sync_status();
     require_noerr( err, exit );
 
-//    //8.生成设备绑定码
+//    //7.生成设备绑定码
 //    err = fog_v2_device_generate_device_vercode( ); //测试用
 //    require_noerr( err, exit );
 
-    //9.开启本地tcp server
+    //8.开启本地tcp server
     err = fog_tcp_server_start();
     require_noerr( err, exit );
 

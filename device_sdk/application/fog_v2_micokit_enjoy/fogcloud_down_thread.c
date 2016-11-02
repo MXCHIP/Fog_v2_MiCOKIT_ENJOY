@@ -154,7 +154,7 @@ OSStatus send_user_template(void)
 
     fogcloud_down_log("[%d]%s", strlen(user_template) ,user_template);
 
-    fog_v2_device_send_event(user_template, FOG_V2_SEND_EVENT_RULES_PUBLISH | FOG_V2_SEND_EVENT_RULES_DATEBASE);
+    fog_v2_device_send_event(user_template, FOG_V2_SEND_EVENT_RULES_PUBLISH);
 
  exit:
     if(user_template != NULL)

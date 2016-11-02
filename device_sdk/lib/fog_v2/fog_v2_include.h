@@ -20,9 +20,14 @@
 
 
 //-------用户调用接口-------
+//功能：初始化fog服务
+//参数：无
+//返回值：kNoErr为成功 其他为失败
+OSStatus init_fog_v2_service(void);
+
 //功能：开启fog的服务
 //参数：无
-//返回值：kNoErr为成功
+//返回值：kNoErr为成功 其他为失败
 OSStatus start_fog_v2_service(void);
 
 //功能：往云端发送数据

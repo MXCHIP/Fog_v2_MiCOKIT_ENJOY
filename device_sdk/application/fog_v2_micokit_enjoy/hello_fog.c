@@ -10,6 +10,9 @@
 
 static mico_semaphore_t wifi_sem;
 
+extern bool MicoExtShouldEnterTestMode(void);
+extern void micokit_ext_mfg_test(mico_Context_t *inContext);
+
 void appNotify_WifiStatusHandler( WiFiEvent status, void* const inContext )
 {
     switch ( status )
@@ -46,12 +49,26 @@ int application_start(void)
 
 	mico_context = mico_system_context_init(sizeof(FOG_DES_S));
 
+	/*init fog v2 service*/
+	err = init_fog_v2_service();
+	require_noerr( err, exit );
+
 	err = mico_system_init(mico_context);
 	require_noerr( err, exit);
+
+#ifdef USE_MiCOKit_EXT
+    /* user test mode to test MiCOKit-EXT board */
+    if ( MicoExtShouldEnterTestMode( ) )
+    {
+        app_log("Enter ext-board test mode by key2.");
+        micokit_ext_mfg_test( mico_context );
+    }
+#endif
 
     /* wait for wifi on */
     mico_rtos_get_semaphore( &wifi_sem, MICO_WAIT_FOREVER );
 
+    /*start fog v2 service*/
     err = start_fog_v2_service();
     require_noerr( err, exit);
 

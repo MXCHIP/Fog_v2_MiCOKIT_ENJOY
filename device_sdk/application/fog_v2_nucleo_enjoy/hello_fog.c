@@ -46,6 +46,10 @@ int application_start(void)
 
 	mico_context = mico_system_context_init(sizeof(FOG_DES_S));
 
+    /*init fog v2 service*/
+    err = init_fog_v2_service();
+    require_noerr( err, exit );
+
 	err = mico_system_init(mico_context);
 	require_noerr( err, exit);
 

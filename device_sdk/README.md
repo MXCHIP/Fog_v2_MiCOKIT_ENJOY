@@ -10,8 +10,10 @@
 
 
 ## 1. 依赖 
-MiCOSDK：3.0及其以后版本  
+MiCOSDK：3.1.0及其以后版本 
 [MICOSDK下载路径][2]
+
+> 3.1.0版本SDK中部分API接口发生变化，本FOG2.0中间件兼容到最新的SDK
 
 ## 2. 目录结构 
 目录 | 内容
@@ -45,6 +47,11 @@ fog_v2_micokit_enjoy和fog_v2_nucleo_enjoy为依托于具体硬件设备的应�
 ## 4. Fog SDK中间件API说明 
 ###  4.1 普通设备API接口如下： 
 ```
+//功能：初始化fog服务
+//参数：无
+//返回值：kNoErr为成功 其他为失败
+OSStatus init_fog_v2_service(void);
+
 //功能：开启fog的服务
 //参数：无
 //返回值：kNoErr - 成功 其他 - 失败
@@ -188,7 +195,7 @@ APP端发起绑定操作时连接设备端的TCP SERVER，发送相应指令给�
 >**注意：如果APP发现设备列表里面的`IsHaveSuperUser`字段为`UNCHECK`的时候，就因该停止配网，减少路由器的配网负载压力。待设备端到云端查询完时候有超级用户后会自动更新`IsHaveSuperUser`字段信息，APP端再做是否绑定处理。**
 
 ### 5.5 普通设备API使用说明
-在调用start_fog_v2_service()接口返回正确之后，即可调用设备发送数据接口fog_v2_device_send_event()和设备接收数据接口fog_v2_device_recv_command()。
+在调用init_fog_v2_service()和start_fog_v2_service()接口返回正确之后，即可调用设备发送数据接口fog_v2_device_send_event()和设备接收数据接口fog_v2_device_recv_command()。
 
 ### 5.6 子设备API注意事项
 在某些应用场景中，有些设备无法直接上网和服务器进行数据交互，但是用户又想让该设备成为独立的设备。为了解决该问题，我们让能上网的设备作为WIFI网关，其他不能上网的设备作为网关的子设备来处理。

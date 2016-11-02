@@ -133,7 +133,7 @@ OSStatus ext_moudule_upload(void)
 
     fogcloud_up_log("[%d]%s", strlen(upload_data), upload_data);
 
-    fog_v2_device_send_event(upload_data, FOG_V2_SEND_EVENT_RULES_PUBLISH | FOG_V2_SEND_EVENT_RULES_DATEBASE);
+    fog_v2_device_send_event(upload_data, FOG_V2_SEND_EVENT_RULES_PUBLISH);
 
  exit:
     if(upload_data != NULL)  //回收资源

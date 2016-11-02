@@ -72,6 +72,26 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg);
 
 extern void ssl_version_set( SSL_VERSION version );
 
+
+//等待网络连接
+static void http_client_wait_net_connect(void)
+{
+    LinkStatusTypeDef link_status;
+
+    while(1)
+    {
+        memset(&link_status, 0, sizeof(link_status));
+
+        micoWlanGetLinkStatus(&link_status);
+        if(link_status.is_connected == true)
+        {
+            break;
+        }
+
+        mico_thread_msleep(50);
+    }
+}
+
 OSStatus start_fogcloud_http_client(void)
 {
     OSStatus err = kGeneralErr;
@@ -79,7 +99,9 @@ OSStatus start_fogcloud_http_client(void)
     err = http_queue_init();
     require_noerr(err, exit);
 
-    err = mico_rtos_create_thread(NULL, MICO_APPLICATION_PRIORITY, "fog http client", fog_v2_http_client_thread, 0x2000, (uint32_t)NULL);
+    http_client_wait_net_connect();
+
+    err = mico_rtos_create_thread(NULL, MICO_APPLICATION_PRIORITY, "fog http client", fog_v2_http_client_thread, 0x2800, (uint32_t)NULL); //栈太小可能会导致ssl_connect无法返回
 
  exit:
     return err;
@@ -320,10 +342,11 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
     //client_ssl = ssl_connect( http_fd, strlen(http_server_ssl_cert_str), http_server_ssl_cert_str, &ssl_errno );
     require_action( client_ssl != NULL, exit, {err = kGeneralErr; app_log("https ssl_connnect error, errno = %d", ssl_errno);} );
 
-    set_https_connect_status(true);
     app_log("#####https connect#####:num_of_chunks:%d, free:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->free_memory);
 
  SSL_SEND:
+    set_https_connect_status(true);
+
     //1.从消息队列中取一条信息
     err = mico_rtos_pop_from_queue( &fog_http_request_queue, &fog_http_req, MICO_WAIT_FOREVER);
     require_noerr( err, SSL_SEND );
@@ -434,7 +457,7 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
     }
 
     HTTPHeaderClear( httpHeader );
-    app_log("#####https connect#####:num_of_chunks:%d, free:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->free_memory);
+    app_log("#####https send#####:num_of_chunks:%d, free:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->free_memory);
     goto SSL_SEND;
 
  exit:
@@ -451,7 +474,7 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
 
     HTTPHeaderDestory( &httpHeader );
 
-    mico_thread_msleep(50);
+    mico_thread_msleep(200);
     system_log("#####https disconnect#####:num_of_chunks:%d, free:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->free_memory);
     goto HTTP_SSL_START;
 

@@ -157,6 +157,7 @@ extern OSStatus fog_v2_ota_upload_log(void);
 
 
 //用户调用接口
+extern OSStatus init_fog_v2_service(void);     //初始化fog服务
 extern OSStatus start_fog_v2_service(void);    //开启fog的服务
 extern OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag); //往云端发送数据
 extern void fog_v2_set_device_recovery_flag(void);
