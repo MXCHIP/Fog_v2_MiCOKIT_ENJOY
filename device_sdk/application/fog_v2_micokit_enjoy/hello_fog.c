@@ -58,7 +58,7 @@ int application_start(void)
 
 #ifdef USE_MiCOKit_EXT
     /* user test mode to test MiCOKit-EXT board */
-    if ( MicoExtShouldEnterTestMode( ) )
+    if ( MicoExtShouldEnterTestMode( ) == true)
     {
         app_log("Enter ext-board test mode by key2.");
         micokit_ext_mfg_test( mico_context );
