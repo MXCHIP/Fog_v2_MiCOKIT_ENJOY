@@ -177,7 +177,7 @@ function send_message_to_device(app_command) {
 		mico2.sendCommand(param, function(ret, err) {
 			try {
 				if(ret && ret.meta.code == 0) {
-					mui.toast("发送数据成功");
+					//mui.toast("发送数据成功");
 				} else {
 					alert("发送数据失败[err]" + JSON.stringify(err) + JSON.stringify(ret));
 				}
@@ -223,7 +223,7 @@ function send_message_to_device(app_command) {
 		mico2.sendCommandSub(param, function(ret, err) {
 			try {
 				if(ret && ret.meta.code == 0) {
-					mui.toast("发送数据成功");
+					//mui.toast("发送数据成功");
 				} else {
 					alert("发送数据失败[err]" + JSON.stringify(err) + JSON.stringify(ret));
 				}

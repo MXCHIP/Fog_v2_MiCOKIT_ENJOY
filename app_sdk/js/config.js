@@ -1,4 +1,4 @@
-const _ID = "A6921613017562"; //APICLOUD专用的 工程id,用户关闭当前app的时候使用
+const _ID = "A6922472546310"; //APICLOUD专用的 工程id,用户关闭当前app的时候使用
 const _APPID = "a457250e-8969-11e6-9d95-00163e103941"; //fogcloud的新建app得到的appid
 
 const _TOKEN = "token"; //用户登录token对应的key
