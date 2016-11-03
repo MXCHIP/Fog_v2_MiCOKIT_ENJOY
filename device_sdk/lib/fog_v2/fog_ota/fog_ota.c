@@ -24,8 +24,6 @@ static void fog_v2_ota_finish(void);
 
 void fog_ota_thread(mico_thread_arg_t args);
 
-extern void ssl_version_set( SSL_VERSION version );
-
 static mico_semaphore_t ota_sem = NULL;
 static uint32_t ota_reveive_index = 0;
 static uint32_t ota_file_len = 0;

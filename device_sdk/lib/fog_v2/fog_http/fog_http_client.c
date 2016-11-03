@@ -70,8 +70,6 @@ static void onClearData( struct _HTTPHeader_t * inHeader, void * inUserContext )
 static OSStatus onReceivedData( struct _HTTPHeader_t * inHeader, uint32_t inPos, uint8_t * inData, size_t inLen, void * inUserContext );
 static void fog_v2_http_client_thread(mico_thread_arg_t arg);
 
-extern void ssl_version_set( SSL_VERSION version );
-
 
 //µÈ´ýÍøÂçÁ¬½Ó
 static void http_client_wait_net_connect(void)
