@@ -10,8 +10,22 @@
 
 static mico_semaphore_t wifi_sem;
 
-extern bool MicoExtShouldEnterTestMode(void);
-extern void micokit_ext_mfg_test(mico_Context_t *inContext);
+extern void micokit_ext_mfg_test( mico_Context_t *inContext );
+
+#ifdef USE_MiCOKit_EXT
+// add test mode for MiCOKit-EXT board,check Arduino_D5 pin when system startup
+WEAK bool MicoExtShouldEnterTestMode( void )
+{
+    if ( MicoGpioInputGet( (mico_gpio_t) Arduino_D5 ) == false )
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+#endif
 
 void appNotify_WifiStatusHandler( WiFiEvent status, void* const inContext )
 {
@@ -29,16 +43,15 @@ void appNotify_WifiStatusHandler( WiFiEvent status, void* const inContext )
     }
 }
 
-
-int application_start(void)
+int application_start( void )
 {
-	app_log_trace();
-	OSStatus err = kNoErr;
+    app_log_trace();
+    OSStatus err = kNoErr;
     mico_Context_t* mico_context;
 
     app_log("APP Version:%s%s", FOG_V2_REPORT_VER, FOG_V2_REPORT_VER_NUM);
 
-    micokit_ext_set();
+    micokit_ext_set( );
 
     err = mico_rtos_init_semaphore( &wifi_sem, 1 );
     require_noerr( err, exit );
@@ -47,18 +60,18 @@ int application_start(void)
     err = mico_system_notify_register( mico_notify_WIFI_STATUS_CHANGED, (void *) appNotify_WifiStatusHandler, NULL );
     require_noerr( err, exit );
 
-	mico_context = mico_system_context_init(sizeof(FOG_DES_S));
+    mico_context = mico_system_context_init( sizeof(FOG_DES_S) );
 
-	/*init fog v2 service*/
-	err = init_fog_v2_service();
-	require_noerr( err, exit );
+    /*init fog v2 service*/
+    err = init_fog_v2_service( );
+    require_noerr( err, exit );
 
-	err = mico_system_init(mico_context);
-	require_noerr( err, exit);
+    err = mico_system_init( mico_context );
+    require_noerr( err, exit );
 
 #ifdef USE_MiCOKit_EXT
     /* user test mode to test MiCOKit-EXT board */
-    if ( MicoExtShouldEnterTestMode( ) == true)
+    if ( MicoExtShouldEnterTestMode( ) == true )
     {
         app_log("Enter ext-board test mode by key2.");
         micokit_ext_mfg_test( mico_context );
@@ -69,18 +82,18 @@ int application_start(void)
     mico_rtos_get_semaphore( &wifi_sem, MICO_WAIT_FOREVER );
 
     /*start fog v2 service*/
-    err = start_fog_v2_service();
-    require_noerr( err, exit);
+    err = start_fog_v2_service( );
+    require_noerr( err, exit );
 
     /*Start fog downstream thread*/
-    err = mico_rtos_create_thread(NULL, MICO_APPLICATION_PRIORITY, "fogcloud_down", user_downstream_thread, 0x1000, (uint32_t)NULL);
+    err = mico_rtos_create_thread( NULL, MICO_APPLICATION_PRIORITY, "fogcloud_down", user_downstream_thread, 0x1000, (uint32_t) NULL );
     require_noerr_string( err, exit, "ERROR: Unable to start the fogclod downstream thread." );
 
     /* Start fog upstream thread */
-    err = mico_rtos_create_thread(NULL, MICO_APPLICATION_PRIORITY, "fogcloud_up", user_upstream_thread, 0x1000, (uint32_t)NULL);
+    err = mico_rtos_create_thread( NULL, MICO_APPLICATION_PRIORITY, "fogcloud_up", user_upstream_thread, 0x1000, (uint32_t) NULL );
     require_noerr_string( err, exit, "ERROR: Unable to start the fogclod upstream thread." );
 
-	exit:
-	mico_rtos_delete_thread(NULL);
-	return err;
+    exit:
+    mico_rtos_delete_thread( NULL );
+    return err;
 }
