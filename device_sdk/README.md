@@ -13,7 +13,7 @@
 MiCOSDK：3.1.0及其以后版本 
 [MICOSDK下载路径][2]
 
-> 3.1.0版本SDK中部分API接口发生变化，本FOG2.0中间件兼容到最新的SDK
+> 3.1.0版本SDK中部分API接口发生变化，FOG2.0中间件适配到最新的SDK
 
 ## 2. 目录结构 
 目录 | 内容
@@ -29,19 +29,19 @@ fog_v2_micokit_enjoy和fog_v2_nucleo_enjoy为依托于具体硬件设备的应�
 
 ## 3. 使用步骤 
 ### 3.1 将FOG2.0SDK中间件加入到MiCoder 
-将fog_v2和mqtt-c文件夹复制到MiCOSDK工程目录MiCO SDK\libraries\protocols\中
-根据当前你的硬件平台,将fog_v2_micokit_enjoy或者fog_v2_nucleo_enjoy文件夹复制到MiCOSDK工程目录MiCO_SDK\demos\application中
+将fog_v2和mqtt-c文件夹复制到MiCOSDK工程目录MiCO SDK/libraries/protocols/中
+根据当前你的硬件平台,将application文件夹里面的应用程序demo复制到MiCOSDK工程目录MiCO_SDK/demos/application中
 
 ### 3.2 在FogCloud后台创建新产品 
-在FogCloud后台创建一个新的产品,得到新的产品ID。替换fog_v2_micokit_enjoy或者fog_v2_nucleo_enjoy文件夹中的config/fog_v2_config.h中的` FOG_V2_PRODUCT_ID `宏定义替换成云端创建得到的产品ID。
+在FogCloud后台创建一个新的产品,得到新的产品ID。替换application/xxxxxx文件夹中的config/fog_v2_config.h中的` FOG_V2_PRODUCT_ID `宏定义替换成云端创建得到的产品ID。
 
 ### 3.3 在MiCoder工程中输入创建Target 
 当基于MiCOKit开发板调试时（以MiCOKit-3165为例）：
-如果使用Jlink仿真器， 命令： ` application.fog_v2_micokit_enjoy@MK3165 download total run `  
-如果使用Stlink仿真器，命令： ` application.fog_v2_micokit_enjoy@MK3165 download JTAG=stlink-v2 total run `
+如果使用Jlink仿真器， 命令： ` application.xxxxxx@MK3165 download total run `  
+如果使用Stlink仿真器，命令： ` application.xxxxxx@MK3165 download JTAG=stlink-v2 total run `
 
 当基于Nucleo开发板调试时：
-当使用Stlink仿真器时， 命令： ` application.fog_v2_nucleo_enjoy@NUCLEO_F411RE download JTAG=stlink-v2-1 run `
+当使用Stlink仿真器时， 命令： ` application.xxxxxx@NUCLEO_F411RE download JTAG=stlink-v2-1 run `
 
 
 ## 4. Fog SDK中间件API说明 
@@ -49,7 +49,7 @@ fog_v2_micokit_enjoy和fog_v2_nucleo_enjoy为依托于具体硬件设备的应�
 ```
 //功能：初始化fog服务
 //参数：无
-//返回值：kNoErr为成功 其他为失败
+//返回值：kNoErr - 成功 其他 - 失败
 OSStatus init_fog_v2_service(void);
 
 //功能：开启fog的服务
