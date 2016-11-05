@@ -18,14 +18,13 @@ MiCOSDK：3.1.0及其以后版本
 ## 2. 目录结构 
 目录 | 内容
 --- | ---
-lib/mqtt-c | mqtt客户端源码(v0.1.8)
-lib/fog_v2 | 与FOGCLOUD V2后台的交互逻辑(v2.4.0)
-application/fog_v2_micokit_enjoy | 为庆科的MiCOKIT开发板制作的应用程序,支持硬件`MiCOkit-3165`、 `MiCOkit-3166`、`MiCOkit-3239`
-application/fog_v2_nucleo_enjoy | 为NUCLEO开发板制作的应用程序,支持硬件`NUCLEO-F411`
+lib/mqtt-c | mqtt客户端源码(版本v0.1.8)
+lib/fog_v2 | 与FOGCLOUD V2后台的交互逻辑(版本v2.4.0)
+application/fog_v2_micokit_enjoy | 为庆科的MiCOKIT开发板制作的应用程序,支持硬件`MiCOkit-3165`、`MiCOkit-3166`、`MiCOkit-3239`、`MiCOkit-3031`
+application/fog_v2_nucleo_enjoy  | 为庆科的MiCOKIT开发板制作的应用程序,支持硬件`MiCOkit-NUCEOF411`
 application/fog_v2_api_test | 测试fog_v2底层文件夹提供的API简单demo
 
->**注意：fog_v2和mqtt-c文件夹的内容是一个依赖于MiCOSDK的中间件，为上层应用提供基础API支撑，
-fog_v2_micokit_enjoy和fog_v2_nucleo_enjoy为依托于具体硬件设备的应用案例**
+>**注意：fog_v2和mqtt-c文件夹的内容是一个依赖于MiCOSDK的中间件，为上层应用提供基础API支撑，fog_v2_micokit_enjoy和fog_v2_nucleo_enjoy为依托于具体硬件设备的应用案例**
 
 ## 3. 使用步骤 
 ### 3.1 将FOG2.0SDK中间件加入到MiCoder 
@@ -205,10 +204,10 @@ WIFI网关为子设备提供相应增加子设备、删除子设备、设置在�
 在v2.fogcloud.io上面创建产品时，需要将子设备的产品类型选择为**网关子设备**，要将父设备产品类型设置为**网关父设备**。否则调用相关接口不会成功。
 
 #### 5.6.2 接口调用说明
-增加子设备成功后，就可以设置子设备在线离线状态和对子设备收发消息了。
+增加子设备成功后，即可设置子设备在线离线状态和对子设备收发消息。
 
 #### 5.6.3 子设备在线离线
-如果父设备是离线的，则app端查询时，子设备一定为离线。
+如果父设备是离线的，则app端查询时，子设备一定为离线（此功能云端尚在开发中）。
 如果父设备是在线的，在子设备在线离线状态为用户调用子设备接口设置的状态。
 在调用fog_v2_add_subdevice()时，可以通过`auto_set_online`参数来选择是否让接口内部设置子设备在线
 
