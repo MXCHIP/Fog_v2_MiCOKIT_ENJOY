@@ -115,6 +115,15 @@ OSStatus fog_v2_subdevice_recv(const char *s_product_id, const char *s_mac, char
 //    //user todo....
 //}
 
+//功能：APP通知网关添加子设备回调函数
+//参数： s_product_id - 子设备产品ID
+//参数： timeout - APP设置的添加超时时间,单位为秒
+//返回值：无
+//USED void user_fog_v2_subdevice_add(const char *s_product_id, uint32_t timeout)
+//{
+//    //user todo....
+//}
+
 #endif //end of FOG_V2_USE_SUB_DEVICE
 
 #endif

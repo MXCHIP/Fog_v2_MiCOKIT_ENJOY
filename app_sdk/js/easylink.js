@@ -200,14 +200,14 @@ function startSearchDevices() {
 	var filter_device_protocol = "";
 	var filter_MAC = "";
 
-	//1. 先停止搜索设备
-	mico2.stopSearchDevices(function(ret, err) {
-		if(ret) {
-			//mui.toast(JSON.stringify(ret));
-		} else {
-			//mui.toast(JSON.stringify(err));
-		}
-	});
+//	//1. 先停止搜索设备
+//	mico2.stopSearchDevices(function(ret, err) {
+//		if(ret) {
+//			//mui.toast(JSON.stringify(ret));
+//		} else {
+//			//mui.toast(JSON.stringify(err));
+//		}
+//	});
 
 	//2.开启搜索设备
 	mui.toast("正在搜索设备");

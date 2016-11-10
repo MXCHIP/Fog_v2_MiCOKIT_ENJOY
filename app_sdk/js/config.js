@@ -1,4 +1,4 @@
-const _ID = "A6922472546310"; //APICLOUD专用的 工程id,用户关闭当前app的时候使用
+const _ID = "A6921613017562"; //APICLOUD专用的 工程id,用户关闭当前app的时候使用
 const _APPID = "a457250e-8969-11e6-9d95-00163e103941"; //fogcloud的新建app得到的appid
 
 const _TOKEN = "token"; //用户登录token对应的key
@@ -27,7 +27,7 @@ const _FOG_PUBLISH_SUB_DEVICE_OFFLINE_CODE = 2005; 	//子设备离线线通知co
 const _FOG_PUBLISH_DEVICE_RECOVERY_CODE = 2003; 	//父设备解除授权
 const _FOG_PUSBLISH_SUB_DEVICE_UNREGISTER_CODE = 2007; 	//子设备注销
 
-const _FOG_PUSBLISH_SUB_DEVICE_REGISTER_CODE = 2006; 		//子设备注册
+const _FOG_PUSBLISH_SUB_DEVICE_REGISTER_CODE = 2006;    //子设备注册
 const _FOG_PUSBLISH_SUB_DEVICE_ADD_TIMEOUT_CODE = 2000;	//添加子设备超时
 
 const FILTER_DEVICE_PROTOCOL = "fog"; //fog2.0.1

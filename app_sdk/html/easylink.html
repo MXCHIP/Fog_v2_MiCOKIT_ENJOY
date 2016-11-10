@@ -49,7 +49,7 @@
 			</div>
 		</div>
 
-		<ul id="search_devices" class="mui-table-view" style="margin-top: 30px; display: none;">
+		<ul id="search_devices" class="mui-table-view" style="margin-top: 30px; display: block;">
 
 			<!--<li style="background: #F3F3F7;"  onclick="bindDevice(this.id)" class="mui-table-view-cell mui-media" id="xxx">
 
@@ -82,7 +82,7 @@
 				easylink_page_listen_keyback();
 
 				if(api.connectionType == 'wifi') {
-					startSearchDevices();
+					//setTimeout("startSearchDevices()", 3000);
 				} else {
 					alert("手机未连接Wi-Fi,请进入系统Wi-Fi设置页面选取合适的网络！");
 				}

@@ -1057,9 +1057,9 @@ void gateway_bind_monitor(mico_thread_arg_t arg)
                     strcpy(s_product_id ,(const char *)get_sub_device_product_id_by_index(index));
                     strcpy(s_mac ,(const char *)get_sub_device_mac_by_index(index));
 
-                    fog_v2_remove_subdevice((const char *)get_sub_device_product_id_by_index(index), (const char *)get_sub_device_mac_by_index(index));
-
                     user_fog_v2_device_notification(MQTT_CMD_SUB_UNBIND, s_product_id, s_mac);
+
+                    fog_v2_remove_subdevice((const char *)get_sub_device_product_id_by_index(index), (const char *)get_sub_device_mac_by_index(index));
                 }
             }else
             {

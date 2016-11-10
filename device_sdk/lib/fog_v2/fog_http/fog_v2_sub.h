@@ -43,7 +43,7 @@ typedef struct SUBDEVICE_RECV_DATA{
 typedef enum {
     MQTT_CMD_GATEWAY_UNBIND = 1,   //网关设备解绑
     MQTT_CMD_GATEWAY_BIND = 2,     //网关设备绑定
-    MQTT_CMD_SUB_UNBIND = 3        //子设备解绑
+    MQTT_CMD_SUB_UNBIND = 3,       //子设备解绑
 } SUBDEVICE_CMD_TYPE;
 
 typedef struct SUBDEVICE_RECV_CMD_DATA{
@@ -51,7 +51,7 @@ typedef struct SUBDEVICE_RECV_CMD_DATA{
     char device_id[64];
 }SUBDEVICE_RECV_CMD_DATA_S;
 
-extern OSStatus fog_v2_subdeice_add_timeout(const char *s_product_id);
+extern OSStatus fog_v2_subdevice_add_timeout(const char *s_product_id);
 
 extern OSStatus fog_v2_add_subdevice( const char *s_product_id, const char *s_mac, bool auto_set_online);
 extern OSStatus fog_v2_remove_subdevice( const char *s_product_id, const char *s_mac );

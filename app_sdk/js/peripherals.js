@@ -132,10 +132,12 @@ function process_device_cmd(mqtt_payload) {
 		{
 			if(cmd_code == _FOG_PUSBLISH_SUB_DEVICE_REGISTER_CODE)
 			{
-				mui.toast("子设备添加成功");
+				alert("子设备添加成功");
 			}else if(cmd_code == _FOG_PUSBLISH_SUB_DEVICE_ADD_TIMEOUT_CODE){
-				mui.toast("子设备添加失败");
+				alert("子设备添加失败");
 			}
+			
+			set_add_subdevice_active();
 		}
 	}catch(e) {
 		alert("云端推送消息错误" + JSON.stringify(mqtt_payload));
@@ -169,6 +171,20 @@ function stop_add_subdevice_timer(){
 	if(add_subdevice_timer != null) {
 		clearTimeout(add_subdevice_timer);
 	}
+}
+
+//复原添加设备的button
+function set_add_subdevice_active() {
+	//获取验证码按钮对象节点
+	var add_subdevice_button = document.getElementById("add_sub_device_button");
+
+	add_subdevice_button.innerHTML = "添加";
+	add_subdevice_button.disabled = false; //设置按钮有效
+	add_subdevice_button.setAttribute("onclick", "sub_device_add()");
+	
+	stop_add_subdevice_timer();
+	
+	return;
 }
 
 //设置按钮倒计时
@@ -279,7 +295,7 @@ function sub_device_add() {
 		return;
 	}
 	
-	send_add_subdevice_msg(60);
+	send_add_subdevice_msg(30);
 }
 
 
