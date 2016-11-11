@@ -24,12 +24,14 @@ OSStatus process_fog_v2_mqtt_cmd(const char *cmd_payload)
 {
     int32_t code = 0;
     OSStatus err = kGeneralErr;
-    json_object *http_body_json_obj = NULL, *code_json_obj = NULL, *data_json_obj = NULL, *deviceid_json_obj = NULL, *product_id_json_obj = NULL, *add_sub_timeout_json_obj = NULL;
-    const char *cmd_deviceid = NULL, *s_product_id = NULL;
-    uint32_t add_sub_timeout = 0;
+    json_object *http_body_json_obj = NULL, *code_json_obj = NULL, *data_json_obj = NULL, *deviceid_json_obj = NULL;
+    const char *cmd_deviceid = NULL;
 
 #if (FOG_V2_USE_SUB_DEVICE == 1)
     uint32_t index = 0;
+    uint32_t add_sub_timeout = 0;
+    const char *s_product_id = NULL;
+    json_object *product_id_json_obj = NULL, *add_sub_timeout_json_obj = NULL;
 #endif
 
     require_string( cmd_payload != NULL, exit, "cmd_payload is NULL ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" );
