@@ -1343,11 +1343,6 @@ static void fog_init(mico_thread_arg_t arg)
 
     fog_des_g->is_activate = false;
 
-#if (FOG_V2_OTA_ENABLE == 1)
-    //0.OTA检查
-    fog_v2_ota();
-#endif
-
     //1.设备激活
     err = fog_v2_device_activate();
     require_noerr( err, exit );
@@ -1366,6 +1361,11 @@ static void fog_init(mico_thread_arg_t arg)
 
         goto start_fog_init;
     }
+
+#if (FOG_V2_OTA_ENABLE == 1)
+    //OTA检查
+    fog_v2_ota();
+#endif
 
 #if (FOG_V2_USE_SUB_DEVICE == 1)
     err = fog_v2_subdevice_des_init();

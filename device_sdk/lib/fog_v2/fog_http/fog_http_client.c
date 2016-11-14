@@ -278,6 +278,44 @@ static OSStatus usergethostbyname( const char * domain, uint8_t * addr, uint8_t 
     return kNoErr;
 }
 
+//设置tcp keep_alive 参数
+static int user_set_tcp_keepalive(int socket, int send_timeout, int recv_timeout, int idle, int interval, int count)
+{
+    int retVal = 0, opt = 0;
+
+    retVal = setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, (char *)&send_timeout,sizeof(int));
+    require_string(retVal >= 0, exit, "SO_SNDTIMEO setsockopt error!");
+
+    app_log("setsockopt SO_SNDTIMEO=%d ms ok.", send_timeout);
+
+    retVal = setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&recv_timeout,sizeof(int));
+    require_string(retVal >= 0, exit, "SO_RCVTIMEO setsockopt error!");
+
+    app_log("setsockopt SO_RCVTIMEO=%d ms ok.", recv_timeout);
+
+    // set keepalive
+    opt = 1;
+    retVal = setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&opt, sizeof(opt)); // 开启socket的Keepalive功能
+    require_string(retVal >= 0, exit, "SO_KEEPALIVE setsockopt error!");
+
+    opt = idle;
+    retVal = setsockopt(socket, IPPROTO_TCP, TCP_KEEPIDLE, (void *)&opt, sizeof(opt)); // TCP IDLE idle秒以后开始发送第一个Keepalive包
+    require_string(retVal >= 0, exit, "TCP_KEEPIDLE setsockopt error!");
+
+    opt = interval;
+    retVal = setsockopt(socket, IPPROTO_TCP, TCP_KEEPINTVL, (void *)&opt, sizeof(opt)); // TCP后面的Keepalive的间隔时间是interval秒
+    require_string(retVal >= 0, exit, "TCP_KEEPINTVL setsockopt error!");
+
+    opt = count;
+    retVal = setsockopt(socket, IPPROTO_TCP, TCP_KEEPCNT, (void *)&opt, sizeof(opt)); // Keepalive 数量为count次
+    require_string(retVal >= 0, exit, "TCP_KEEPCNT setsockopt error!");
+
+    app_log("set tcp keepalive: idle=%d, interval=%d, cnt=%d.", idle, interval, count);
+
+    exit:
+    return retVal;
+}
+
 
 //FOG V2 http client
 static void fog_v2_http_client_thread(mico_thread_arg_t arg)
@@ -324,8 +362,14 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
     addr.sin_addr.s_addr = inet_addr( ipstr );
     addr.sin_port = htons(FOG_V2_HTTP_PORT_SSL); //HTTP SSL端口 443
 
-    app_log("start connect");
+    ret = user_set_tcp_keepalive(http_fd, HTTP_SEND_TIME_OUT, HTTP_RECV_TIME_OUT, HTTP_KEEP_IDLE_TIME, HTTP_KEEP_INTVL_TIME, HTTP_KEEP_COUNT);
+    if(ret < 0)
+    {
+        app_log("user_set_tcp_keepalive() error");
+        goto exit;
+    }
 
+    app_log("start connect");
     //app_log("#####start connect#####:num_of_chunks:%d,allocted_memory:%d, free:%d, total_memory:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->allocted_memory, MicoGetMemoryInfo()->free_memory, MicoGetMemoryInfo()->total_memory);
 
     err = connect( http_fd, (struct sockaddr *)&addr, sizeof(addr) );

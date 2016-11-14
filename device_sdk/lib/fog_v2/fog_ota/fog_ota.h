@@ -1,6 +1,12 @@
 #ifndef _FOG_OTA_H_
 #define _FOG_OTA_H_
 
+#define OTA_SEND_TIME_OUT           (3000)
+#define OTA_RECV_TIME_OUT           (3000)
+#define OTA_KEEP_IDLE_TIME          (6)
+#define OTA_KEEP_INTVL_TIME         (3)
+#define OTA_KEEP_COUNT              (3)
+
 #define OTA_RES_LEN_MAX             (1024)
 #define OTA_URL_LEN_MAX             (512)
 #define OTA_MD5_LEN_MAX             (128)

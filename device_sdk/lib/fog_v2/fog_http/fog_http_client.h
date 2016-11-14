@@ -1,7 +1,14 @@
 #ifndef __FOG_HTTP_CLIENT_H_
 #define __FOG_HTTP_CLIENT_H_
 
-#define HTTP_YIELD_TMIE                 (2*1000) //http超时时间
+#define HTTP_SEND_TIME_OUT              (3000)
+#define HTTP_RECV_TIME_OUT              (3000)
+#define HTTP_KEEP_IDLE_TIME             (6)
+#define HTTP_KEEP_INTVL_TIME            (3)
+#define HTTP_KEEP_COUNT                 (3)
+
+
+#define HTTP_YIELD_TMIE                 (1200) //http超时时间
 
 #define HTTP_REQUEST_BODY_MAX_LEN       (2048)
 #define HTTP_REQUEST_HOST_NAME_MAX_LEN  (64)

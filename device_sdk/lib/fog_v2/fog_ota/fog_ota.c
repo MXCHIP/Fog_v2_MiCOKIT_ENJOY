@@ -213,7 +213,17 @@ bool process_path(char *path)
    }
 }
 
+//软件版本号回滚到系统设置
+static void firmware_version_rollback(void)
+{
+    memset(get_fog_des_g()->firmware, 0, sizeof(get_fog_des_g()->firmware));
+    memcpy(get_fog_des_g()->firmware, FOG_V2_REPORT_VER, strlen(FOG_V2_REPORT_VER));
+    memcpy(get_fog_des_g()->firmware + strlen(get_fog_des_g()->firmware), FOG_V2_REPORT_VER_NUM, strlen(FOG_V2_REPORT_VER_NUM));   //设置设备软件版本号
 
+    mico_system_context_update(mico_system_context_get());
+
+    return;
+}
 
 //fog v2 OTA
 void fog_v2_ota(void)
@@ -283,6 +293,11 @@ void fog_v2_ota(void)
     }
 
  exit:
+    if(http_read_file_success == false)
+    {
+        firmware_version_rollback();
+    }
+
     if( ota_sem != NULL )
     {
         mico_rtos_deinit_semaphore( &ota_sem );
@@ -450,6 +465,43 @@ static OSStatus usergethostbyname( const char * domain, uint8_t * addr, uint8_t 
     return kNoErr;
 }
 
+//设置tcp keep_alive 参数
+static int ota_set_tcp_keepalive(int socket, int send_timeout, int recv_timeout, int idle, int interval, int count)
+{
+    int retVal = 0, opt = 0;
+
+    retVal = setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, (char *)&send_timeout,sizeof(int));
+    require_string(retVal >= 0, exit, "SO_SNDTIMEO setsockopt error!");
+
+    app_log("setsockopt SO_SNDTIMEO=%d ms ok.", send_timeout);
+
+    retVal = setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&recv_timeout,sizeof(int));
+    require_string(retVal >= 0, exit, "SO_RCVTIMEO setsockopt error!");
+
+    app_log("setsockopt SO_RCVTIMEO=%d ms ok.", recv_timeout);
+
+    // set keepalive
+    opt = 1;
+    retVal = setsockopt(socket, SOL_SOCKET, SO_KEEPALIVE, (void *)&opt, sizeof(opt)); // 开启socket的Keepalive功能
+    require_string(retVal >= 0, exit, "SO_KEEPALIVE setsockopt error!");
+
+    opt = idle;
+    retVal = setsockopt(socket, IPPROTO_TCP, TCP_KEEPIDLE, (void *)&opt, sizeof(opt)); // TCP IDLE idle秒以后开始发送第一个Keepalive包
+    require_string(retVal >= 0, exit, "TCP_KEEPIDLE setsockopt error!");
+
+    opt = interval;
+    retVal = setsockopt(socket, IPPROTO_TCP, TCP_KEEPINTVL, (void *)&opt, sizeof(opt)); // TCP后面的Keepalive的间隔时间是interval秒
+    require_string(retVal >= 0, exit, "TCP_KEEPINTVL setsockopt error!");
+
+    opt = count;
+    retVal = setsockopt(socket, IPPROTO_TCP, TCP_KEEPCNT, (void *)&opt, sizeof(opt)); // Keepalive 数量为count次
+    require_string(retVal >= 0, exit, "TCP_KEEPCNT setsockopt error!");
+
+    app_log("set tcp keepalive: idle=%d, interval=%d, cnt=%d.", idle, interval, count);
+
+    exit:
+    return retVal;
+}
 
 //OTA默认只支持SSL类型
 void fog_ota_thread(mico_thread_arg_t args)
@@ -501,17 +553,23 @@ void fog_ota_thread(mico_thread_arg_t args)
     addr.sin_addr.s_addr = inet_addr( ipstr );
     addr.sin_port = htons(OTA_PORT_SSL); //SSL端口 443
 
+    ret = ota_set_tcp_keepalive(ota_fd, OTA_SEND_TIME_OUT, OTA_RECV_TIME_OUT, OTA_KEEP_IDLE_TIME, OTA_KEEP_INTVL_TIME, OTA_KEEP_COUNT);
+    if(ret < 0)
+    {
+        app_log("user_set_tcp_keepalive() error");
+        goto exit;
+    }
+
     err = connect( ota_fd, (struct sockaddr *)&addr, sizeof(addr) );
     require_action(err == kNoErr, exit, err = kGeneralErr );
 
     //ssl_version_set(TLS_V1_2_MODE);    //设置SSL版本
     ssl_set_client_version(TLS_V1_2_MODE);
 
-
     client_ssl = ssl_connect( ota_fd, 0, NULL, &ssl_errno );
     require_action( client_ssl != NULL, quit_thread, {err = kGeneralErr; app_log("OTA ssl_connnect error, errno = %d", ssl_errno);} );
 
-    system_log("#####OTA connect#####:num_of_chunks:%d, free:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->free_memory);
+    app_log("#####OTA connect#####:num_of_chunks:%d, free:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->free_memory);
 
     memset(ota_http_requeset, 0, sizeof(ota_http_requeset));
     sprintf(ota_http_requeset, device_ota_download, path, host_name, ota_reveive_index);
