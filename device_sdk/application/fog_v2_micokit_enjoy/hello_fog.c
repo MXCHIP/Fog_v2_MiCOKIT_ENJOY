@@ -1,5 +1,5 @@
-#include "config/fog_v2_config.h"
 #include "mico.h"
+#include "fog_v2_include.h"
 #include "user_common.h"
 #include "fogcloud_up_thread.h"
 #include "fogcloud_down_thread.h"

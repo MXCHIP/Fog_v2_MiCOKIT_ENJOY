@@ -475,10 +475,10 @@ static int ota_set_tcp_keepalive(int socket, int send_timeout, int recv_timeout,
 
     app_log("setsockopt SO_SNDTIMEO=%d ms ok.", send_timeout);
 
-    retVal = setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&recv_timeout,sizeof(int));
-    require_string(retVal >= 0, exit, "SO_RCVTIMEO setsockopt error!");
-
-    app_log("setsockopt SO_RCVTIMEO=%d ms ok.", recv_timeout);
+//    retVal = setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&recv_timeout,sizeof(int));
+//    require_string(retVal >= 0, exit, "SO_RCVTIMEO setsockopt error!");
+//
+//    app_log("setsockopt SO_RCVTIMEO=%d ms ok.", recv_timeout);
 
     // set keepalive
     opt = 1;

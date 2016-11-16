@@ -32,7 +32,7 @@ application/fog_v2_api_test | 测试fog_v2底层文件夹提供的API简单demo
 根据当前你的硬件平台,将application文件夹里面的应用程序demo复制到MiCOSDK工程目录MiCO_SDK/demos/application中
 
 ### 3.2 在FogCloud后台创建新产品 
-在FogCloud后台创建一个新的产品,得到新的产品ID。替换application/xxxxxx文件夹中的config/fog_v2_config.h中的` FOG_V2_PRODUCT_ID `宏定义替换成云端创建得到的产品ID。
+在FogCloud后台创建一个新的产品,得到新的产品ID。将lib/fog_v2文件夹中的`fog_v2_config.h`中的` FOG_V2_PRODUCT_ID `宏定义替换成云端创建得到的产品ID。
 
 ### 3.3 在MiCoder工程中输入创建Target 
 当基于MiCOKit开发板调试时（以MiCOKit-3165为例）：

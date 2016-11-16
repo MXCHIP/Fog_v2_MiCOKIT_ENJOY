@@ -9,10 +9,6 @@
 
 NAME := Lib_fog_v2_micokit_enjoy
 
-$(NAME)_INCLUDES += .
-
-GLOBAL_INCLUDES += 	./config
-
 $(NAME)_SOURCES := 	fogcloud_down_thread.c \
 					fogcloud_up_thread.c \
 					hello_fog.c \

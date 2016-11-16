@@ -1,11 +1,10 @@
 #include "mico.h"
 #include "fogcloud_up_thread.h"
-
-#include "fog_v2_config.h"
+#include "fog_v2_include.h"
 #include "json_c/json_object.h"
 #include "json_c/json.h"
 #include "micokit_ext.h"
-#include "sensor\DHT11\DHT11.h"
+#include "sensor/DHT11/DHT11.h"
 #include "user_common.h"
 #include "template_analysis.h"
 #include "user_template.h"
