@@ -1,8 +1,7 @@
 #include "mico.h"
 #include "fog_mqtt.h"
 #include "fog_process_mqtt_cmd.h"
-#include "../fog_http/fog_v2_sub.h"
-#include "fog_v2_config.h"
+#include "fog_v2_include.h"
 #include "MQTTClient.h"
 
 #ifndef FOG_MQTT_DEBUG

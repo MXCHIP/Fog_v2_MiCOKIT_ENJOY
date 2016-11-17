@@ -5,9 +5,9 @@
 #define FOG_DISABLE (0)
 
 //选择你的硬件型号
-#define EMW_3165                            FOG_ENABLE
+#define EMW_3165                            FOG_DISABLE
 #define EMW_3166                            FOG_DISABLE
-#define EMW_3239                            FOG_DISABLE
+#define EMW_3239                            FOG_ENABLE
 #define EMW_3031                            FOG_DISABLE
 #define NUCLEO_F411                         FOG_DISABLE
 
@@ -58,8 +58,6 @@
 #define FOG_V2_OTA_ENABLE               (1)      //1:enable 0:disable  打开后在fog初始化中会检查当前版本,如果有新的版本则自动更新然后重启
 
 #define FOG_V2_USE_SUB_DEVICE           (1)      //1:enable 0:disable  是否使用子设备接口,只有EMW3239才会使用到
-
-#include "fog_v2_include.h"                      //组件提供的头文件
 
 #endif
 

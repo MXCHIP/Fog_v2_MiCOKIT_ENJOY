@@ -1,7 +1,7 @@
 #include "mico.h"
 #include "StringUtils.h"
 #include "fog_bonjour.h"
-#include "fog_v2_config.h"
+#include "fog_v2_include.h"
 
 #ifndef FOG_BONJOUR_SERVICE_NAME
     #error "FOG_BONJOUR_SERVICE_NAME is not define"

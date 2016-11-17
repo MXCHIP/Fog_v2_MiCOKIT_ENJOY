@@ -1,7 +1,6 @@
 #include "mico.h"
 #include "fog_http_client.h"
-
-#include "fog_v2_config.h"
+#include "fog_v2_include.h"
 #include "HTTPUtils.h"
 #include "SocketUtils.h"
 

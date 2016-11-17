@@ -1,4 +1,4 @@
-#include "fog_v2_config.h"
+#include "fog_v2_include.h"
 #include "mico.h"
 #include "debug.h"
 #include "url.h"

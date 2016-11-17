@@ -1,7 +1,7 @@
 #include "mico.h"
 #include "SocketUtils.h"
 #include "fog_tcp_server.h"
-#include "fog_v2_config.h"
+#include "fog_v2_include.h"
 
 #define tcp_server_log(M, ...)  custom_log("FOG_TCP_SEVER", M, ##__VA_ARGS__)
 

@@ -1,4 +1,4 @@
-#include "fog_v2_config.h"
+#include "fog_v2_include.h"
 #include "fog_v2_sub.h"
 #include "mico.h"
 #include "fog_v2_user_notification.h"

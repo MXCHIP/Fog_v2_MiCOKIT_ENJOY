@@ -1,4 +1,4 @@
-#include "fog_v2_config.h"
+#include "fog_v2_include.h"
 #include "mico.h"
 
 #define app_log(M, ...)                     custom_log("FOG_V2", M, ##__VA_ARGS__)

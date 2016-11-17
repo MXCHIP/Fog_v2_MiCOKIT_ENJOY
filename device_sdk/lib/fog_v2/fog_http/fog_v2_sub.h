@@ -1,7 +1,7 @@
 #ifndef __FOG_V2_SUB_H_
 #define __FOG_V2_SUB_H_
 
-#include "fog_v2_config.h"
+#include "fog_v2_include.h"
 
 #if (FOG_V2_USE_SUB_DEVICE == 1)
 
