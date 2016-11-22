@@ -260,7 +260,7 @@ function send_add_subdevice_msg(timeout, callback) {
 
 	var param = {
 		deviceid: device_id,
-		productid: "",
+		productid: "deb2616e-9c33-11e6-9d95-00163e103941",
 		timeout: timeout,
 		extend: "",
 		token: app_token
@@ -544,8 +544,9 @@ function process_mqtt_data(device_id, data) {
 			{
 				display_recv_data_to_recv_area(mqtt_payload);
 			}else if(get_data_transmission_switch_state() == false){
-				mui.toast(JSON.stringify(mqtt_payload));
-				console.log(JSON.stringify(mqtt_payload));
+				//mui.toast(JSON.stringify(mqtt_payload));
+				//console.log(JSON.stringify(mqtt_payload));
+				process_device_status_data_by_CMD(mqtt_payload);
 			}
 		}else{
 			alert("is_sub is error");
