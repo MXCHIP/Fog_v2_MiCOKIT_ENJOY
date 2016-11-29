@@ -65,28 +65,22 @@ mico_queue_t fog_http_response_queue = NULL; //FOG HTTP的接收响应队列
 OSStatus start_fogcloud_http_client(void);
 
 static OSStatus http_queue_init(void);
+static OSStatus http_queue_deinit(void);
 static void onClearData( struct _HTTPHeader_t * inHeader, void * inUserContext );
 static OSStatus onReceivedData( struct _HTTPHeader_t * inHeader, uint32_t inPos, uint8_t * inData, size_t inLen, void * inUserContext );
 static void fog_v2_http_client_thread(mico_thread_arg_t arg);
 
 
-//等待网络连接
-static void http_client_wait_net_connect(void)
+//获取网络连接状态
+static bool http_get_wifi_status(void)
 {
     LinkStatusTypeDef link_status;
 
-    while(1)
-    {
-        memset(&link_status, 0, sizeof(link_status));
+    memset(&link_status, 0, sizeof(link_status));
 
-        micoWlanGetLinkStatus(&link_status);
-        if(link_status.is_connected == true)
-        {
-            break;
-        }
+    micoWlanGetLinkStatus(&link_status);
 
-        mico_thread_msleep(50);
-    }
+    return (bool)(link_status.is_connected);
 }
 
 OSStatus start_fogcloud_http_client(void)
@@ -96,11 +90,21 @@ OSStatus start_fogcloud_http_client(void)
     err = http_queue_init();
     require_noerr(err, exit);
 
-    http_client_wait_net_connect();
+    if(http_get_wifi_status() == false)
+    {
+        err = kGeneralErr;
+        app_log("[ERROR]wifi is not connect!");
+        goto exit;
+    }
 
     err = mico_rtos_create_thread(NULL, MICO_APPLICATION_PRIORITY, "fog http client", fog_v2_http_client_thread, 0x2800, (uint32_t)NULL); //栈太小可能会导致ssl_connect无法返回
 
  exit:
+     if(err != kNoErr)
+     {
+         http_queue_deinit();
+     }
+
     return err;
 }
 
@@ -116,6 +120,20 @@ static OSStatus http_queue_init(void)
 
  exit:
     return err;
+}
+
+static OSStatus http_queue_deinit(void)
+{
+    if(fog_http_request_queue != NULL)
+    {
+        mico_rtos_deinit_queue( &fog_http_request_queue);
+    }
+
+    if(fog_http_response_queue != NULL)
+    {
+        mico_rtos_deinit_queue( &fog_http_response_queue);
+    }
+    return kNoErr;
 }
 
 
@@ -234,6 +252,12 @@ void send_response_to_queue(FOG_HTTP_RESPONSE_E status, uint32_t http_id, int32_
         err = mico_rtos_pop_from_queue(&fog_http_response_queue, &fog_http_response_temp, 10);   //如果满先弹出一个
         require_noerr_action(err, exit, app_log("[error]mico_rtos_pop_from_queue err"));
 
+        if(fog_http_response_temp->fog_response_body != NULL)
+        {
+            free(fog_http_response_temp->fog_response_body);
+            fog_http_response_temp->fog_response_body = NULL;
+        }
+
         fog_http_response_temp = NULL;
     }
 
@@ -244,6 +268,15 @@ void send_response_to_queue(FOG_HTTP_RESPONSE_E status, uint32_t http_id, int32_
     local_id = http_id;
 
     exit:
+    if(err != kNoErr)
+    {
+        if(fog_http_res.fog_response_body != NULL)
+        {
+            free(fog_http_res.fog_response_body);
+            fog_http_res.fog_response_body = NULL;
+        }
+    }
+
     return;
 }
 
@@ -503,7 +536,7 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
 
  exit:
     set_https_connect_status(false);
-    send_response_to_queue(HTTP_CONNECT_ERROR, req_id, 0, NULL);    //只有发生连接发生错误的时候才会进入exit中
+//    send_response_to_queue(HTTP_CONNECT_ERROR, req_id, 0, NULL);    //只有发生连接发生错误的时候才会进入exit中
 
     if( client_ssl )
     {
@@ -524,6 +557,8 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
         free(fog_http_requeset);
         fog_http_requeset = NULL;
     }
+
+    http_queue_deinit();
 
     app_log( "Exit: Client exit with err = %d, fd:%d", err, http_fd );
     mico_rtos_delete_thread(NULL);

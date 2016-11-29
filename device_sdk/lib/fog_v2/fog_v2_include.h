@@ -15,6 +15,7 @@
 #include "./fog_mqtt/fog_process_mqtt_cmd.h"
 
 #include "./fog_ota/fog_ota.h"
+#include "./fog_ota/fog2_ota_notification.h"
 
 #include "./fog_tcp_server/fog_tcp_server.h"
 
@@ -49,14 +50,28 @@ OSStatus fog_v2_device_recv_command(char *payload, uint32_t payload_len, uint32_
 
 //功能：设备端设置回收标志位 若调用该接口，设备重启后联网会自动向云端发起设备回收请求
 //参数：无
-//返回值：无
-void fog_v2_set_device_recovery_flag(void);
+//返回值：true - 设置成功，flase - 设置失败
+bool fog_v2_set_device_recovery_flag(void);
 
 //功能：查询本设备是否有超级用户（被绑定)
 //参数：无
 //返回值：true - 有超级用户，flase - 无超级用户
 bool fog_v2_is_have_superuser(void);
 
+//功能：OTA状态通知
+//参数：type - 事件类型
+//事件类型一共有五种
+//FOG2_OTA_CHECK_FAILURE 检查OTA失败
+//FOG2_OTA_NO_NEW_VERSION 检查发现无新版本
+//FOG2_OTA_IN_UPDATE 正在OTA更新
+//FOG2_OTA_UPDATE_SUCCESS 更新成功
+//FOG2_OTA_UPDATE_FAILURE 更新失败
+//参数： s_mac - 子设备MAC地址
+//返回值：无
+//USED void user_fog_v2_ota_notification(FOG2_OTA_EVENT_TYPE ota_event_type)
+//{
+//    //user todo....
+//}
 
 #if (FOG_V2_USE_SUB_DEVICE == 1)
 //-------子设备相关接口-------
@@ -98,8 +113,20 @@ OSStatus fog_v2_subdevice_send(const char *s_product_id, const char *s_mac, cons
 //参数： payload - 接收数据缓冲区地址
 //参数： payload_len - 接收数据缓冲区地址的长度
 //参数： timeout - 接收数据的超时时间
-//返回值：kNoErr为成功 其他值为失败
+//返回值：kNoErr-成功  kDeletedErr-该设备已被删除  kGeneralErr-超时
 OSStatus fog_v2_subdevice_recv(const char *s_product_id, const char *s_mac, char *payload, uint32_t payload_len, uint32_t timeout);
+
+
+//功能：子设备接收数据
+//参数： user_callbck - 用户回调
+//返回值：kNoErr-成功 kGeneralErr-失败
+OSStatus fog_v2_get_sub_device_all_available(FOG_V2_SUBDEVICE_AVAILABLE_CB user_callbck);
+
+//功能：获取子设备的数量信息
+//参数： tatal - 底层定义的子设备总数
+//参数： used - 已经使用的子设备总数
+//返回值：kNoErr-成功 kGeneralErr-失败
+OSStatus fog_v2_get_subdevice_num_info(uint32_t *tatal, uint32_t *used);
 
 //功能：设备状态改变通知（该函数需要用户在自己的代码中复写函数体，中间件是使用WEAK定义调用该函数）
 //参数：type - 事件类型
@@ -115,7 +142,7 @@ OSStatus fog_v2_subdevice_recv(const char *s_product_id, const char *s_mac, char
 //    //user todo....
 //}
 
-//功能：APP通知网关添加子设备回调函数
+//功能：APP通知网关添加子设备通知
 //参数： s_product_id - 子设备产品ID
 //参数： timeout - APP设置的添加超时时间,单位为秒
 //返回值：无

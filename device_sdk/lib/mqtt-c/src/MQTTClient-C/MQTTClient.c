@@ -24,7 +24,6 @@ void NewMessageData(MessageData* md, MQTTString* aTopicName, MQTTMessage* aMessg
     md->message = aMessgage;
 }
 
-
 int getNextPacketId(Client *c) {
     return c->next_packetid = (c->next_packetid == MAX_PACKET_ID) ? 1 : c->next_packetid + 1;
 }
@@ -666,25 +665,23 @@ int MQTTSubscribe(Client* c, const char* topicFilter, enum QoS qos, messageHandl
                   }
                 }
                 else
-                /////
                 //if (c->messageHandlers[i].topicFilter == 0)
                 {
                     c->messageHandlers[i].topicFilter = topicFilter;
                     c->messageHandlers[i].fp = messageHandler;
-                    rc = 0;
-                    break;
+                    return MQTT_SUCCESS;
                 }
             }
             ///// add by wes20151009
-            if(i > MAX_MESSAGE_HANDLERS){  // exceed max number of msg hander
+            if(i >= MAX_MESSAGE_HANDLERS){  // exceed max number of msg hander
               mqtt_client_log("ERROR: overflow: max message hander num=%d", MAX_MESSAGE_HANDLERS);
               rc = MQTT_FAILURE;
             }
-            /////
         }
-    }
-    else
+    }else
+    {
         rc = MQTT_FAILURE;
+    }
 
 exit:
     ///// add by wes20151009: release send buffer

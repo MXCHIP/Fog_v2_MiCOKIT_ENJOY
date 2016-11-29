@@ -5,9 +5,9 @@
 #define FOG_DISABLE (0)
 
 //选择你的硬件型号
-#define EMW_3165                            FOG_DISABLE
+#define EMW_3165                            FOG_ENABLE
 #define EMW_3166                            FOG_DISABLE
-#define EMW_3239                            FOG_ENABLE
+#define EMW_3239                            FOG_DISABLE
 #define EMW_3031                            FOG_DISABLE
 #define NUCLEO_F411                         FOG_DISABLE
 
@@ -22,7 +22,7 @@
     #define FOG_V2_REPORT_VER_NUM           ("001")                 //固件次版本号
     #define FOG_V2_MODULE_TYPE              ("EMW3166")             //模块型号
 #elif(EMW_3239 == FOG_ENABLE)
-    #define FOG_V2_PRODUCT_ID               ("712d8ee8-8612-11e6-9d95-00163e103941")    //云端建立产品得到的 产品ID
+    #define FOG_V2_PRODUCT_ID               ("3ca41224-ac6d-11e6-9baf-00163e120d98")    //云端建立产品得到的 产品ID
     #define FOG_V2_REPORT_VER               ("FOG_V2_EMW3239@")     //固件主版本号
     #define FOG_V2_REPORT_VER_NUM           ("001")                 //固件次版本号
     #define FOG_V2_MODULE_TYPE              ("EMW3239")             //模块型号
@@ -55,9 +55,9 @@
 
 #define FOG_V2_TCP_SERVER_PORT          (8002)   //APP和设备的本地通信端口
 
-#define FOG_V2_OTA_ENABLE               (1)      //1:enable 0:disable  打开后在fog初始化中会检查当前版本,如果有新的版本则自动更新然后重启
+#define FOG_V2_OTA_CHECK_ENABLE         (1)      //1:enable 0:disable  打开后在fog初始化中会检查当前版本
 
-#define FOG_V2_USE_SUB_DEVICE           (1)      //1:enable 0:disable  是否使用子设备接口,只有EMW3239才会使用到
+#define FOG_V2_USE_SUB_DEVICE           (0)      //1:enable 0:disable  是否使用子设备接口,只有EMW3239才会使用到
 
 #endif
 

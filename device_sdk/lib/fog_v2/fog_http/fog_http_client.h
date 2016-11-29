@@ -8,7 +8,7 @@
 #define HTTP_KEEP_COUNT                 (3)
 
 
-#define HTTP_YIELD_TMIE                 (1200) //http超时时间
+#define HTTP_YIELD_TMIE                 (2000) //http超时时间
 
 #define HTTP_REQUEST_BODY_MAX_LEN       (2048)
 #define HTTP_REQUEST_HOST_NAME_MAX_LEN  (64)

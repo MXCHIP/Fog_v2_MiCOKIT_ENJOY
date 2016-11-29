@@ -17,6 +17,7 @@ char *get_sub_device_commands_topic_by_index( uint32_t index );
 char *get_sub_device_cmd_topic_by_index( uint32_t index );
 char *get_sub_device_mac_by_index( uint32_t index );
 char *get_sub_device_product_id_by_index( uint32_t index );
+OSStatus fog_v2_get_sub_device_all_available(FOG_V2_SUBDEVICE_AVAILABLE_CB user_callbck);
 
 bool get_sub_device_queue_usable_index(uint32_t *index);
 bool get_sub_device_queue_index_by_mac(uint32_t *index, const char *s_product_id, const char *s_mac);
@@ -37,8 +38,12 @@ OSStatus lock_subdevice_des_mutex( ); //获取锁
 OSStatus unlock_subdevice_des_mutex( ); //释放锁
 
 static bool release_subdevice( uint32_t index );
-
+static void cli_get_sub_device_info(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv);
 //----------------------------------------------------------------
+
+struct cli_command mxchip_subdevice_cmd[] = {
+    { "sub_info", "get one subdevice info", cli_get_sub_device_info}
+};
 
 //判断全局指针是否初始化
 bool fog_v2_golobal_des_is_init(void)
@@ -90,6 +95,33 @@ OSStatus unlock_subdevice_des_mutex( )
      {
         return kGeneralErr;
      }
+}
+
+//get subdevice num information
+OSStatus fog_v2_get_subdevice_num_info(uint32_t *tatal, uint32_t *used)
+{
+    uint32_t used_count = 0;
+    uint32_t i = 0;
+
+    if(fog_v2_golobal_des_is_init() == false)
+    {
+        app_log("subdevice not init!");
+        return kGeneralErr;
+    }
+
+    *tatal = FOG_V2_SUB_DEVICE_MAX_NUM;
+
+    for ( i = 0; i < FOG_V2_SUB_DEVICE_MAX_NUM; i++ )
+    {
+        if ( get_sub_device_queue_is_available_by_index( i ) == true )
+        {
+            used_count ++;
+        }
+    }
+
+    *used = used_count;
+
+    return kGeneralErr;
 }
 
 
@@ -153,7 +185,7 @@ void get_sub_device_queue_index_info(uint32_t index)
 
     app_log("====================================");
     app_log("index:%ld", index);
-    app_log("s_is_activate:%d", get_fog_des_g()->sub_des[index].s_is_activate);
+    app_log("s_is_activate:%s", (get_fog_des_g()->sub_des[index].s_is_activate == TRUE) ? "true" : "flase");
     app_log("s_mqtt_topic_cmd: %s", (get_fog_des_g()->sub_des[index].s_mqtt_topic_cmd == NULL) ? "null point" : get_fog_des_g()->sub_des[index].s_mqtt_topic_cmd);
     app_log("s_mqtt_topic_commands: %s", (get_fog_des_g()->sub_des[index].s_mqtt_topic_commands == NULL) ? "null point" : get_fog_des_g()->sub_des[index].s_mqtt_topic_commands);
     app_log("s_device_mac:%s", (*(get_fog_des_g()->sub_des[index].s_device_mac) == 0) ? "nothing" : get_fog_des_g()->sub_des[index].s_device_mac);
@@ -167,6 +199,7 @@ void get_sub_device_queue_index_info(uint32_t index)
 void get_sub_device_queue_all_info(void)
 {
     uint32_t i = 0;
+    uint32_t count = 0;
 
     if(fog_v2_golobal_des_is_init() == false)
     {
@@ -179,13 +212,38 @@ void get_sub_device_queue_all_info(void)
         if(get_sub_device_queue_is_available_by_index(i) == true)
         {
             get_sub_device_queue_index_info(i);
+            count ++;
         }else
         {
-            app_log("index = %ld not available", i);
+            app_log("index = %ld not active", i);
         }
     }
 
+    app_log("total:%d, used:%ld", FOG_V2_SUB_DEVICE_MAX_NUM, count);
+
     return;
+}
+
+//get subdevice available list
+OSStatus fog_v2_get_sub_device_all_available(FOG_V2_SUBDEVICE_AVAILABLE_CB user_callbck)
+{
+    uint32_t i = 0;
+
+    if(fog_v2_golobal_des_is_init() == false || user_callbck == NULL)
+    {
+        app_log("subdevice not init!");
+        return kGeneralErr;
+    }
+
+    for(i = 0; i < FOG_V2_SUB_DEVICE_MAX_NUM; i ++)
+    {
+        if(get_sub_device_queue_is_available_by_index(i) == true)
+        {
+            user_callbck(get_fog_des_g()->sub_des[i].s_product_id, get_fog_des_g()->sub_des[i].s_device_mac );
+        }
+    }
+
+    return kNoErr;
 }
 
 
@@ -225,6 +283,8 @@ bool get_sub_device_queue_usable_index(uint32_t *index)
         return false;
     }
 
+    require_string(index != NULL, exit, "param is error!");
+
     lock_subdevice_des_mutex(); //加锁 +++++++
 
     for(i = 0; i < FOG_V2_SUB_DEVICE_MAX_NUM; i ++)
@@ -238,6 +298,8 @@ bool get_sub_device_queue_usable_index(uint32_t *index)
     }
 
     unlock_subdevice_des_mutex(); //解锁 ------
+
+    exit:
     return false;
 }
 
@@ -828,7 +890,7 @@ OSStatus fog_v2_subdevice_des_add_topic( void )
     return err;
 }
 
-OSStatus fog_v2_subdevice_des_set_online( void )
+OSStatus fog_v2_subdevice_des_set_status( bool status )
 {
     uint32_t i = 0;
     OSStatus err = kGeneralErr;
@@ -843,17 +905,18 @@ OSStatus fog_v2_subdevice_des_set_online( void )
     {
         if ( get_fog_des_g( )->sub_des[i].s_is_activate == true )
         {
-            err = fog_v2_set_subdevice_status( get_fog_des_g( )->sub_des[i].s_product_id, get_fog_des_g( )->sub_des[i].s_device_mac, true);
-            require_noerr( err, exit );
-
-            app_log("device set online, product_id:%s, mac:%s", get_fog_des_g( )->sub_des[i].s_product_id, get_fog_des_g( )->sub_des[i].s_device_mac);
+            err = fog_v2_set_subdevice_status( get_fog_des_g( )->sub_des[i].s_product_id, get_fog_des_g( )->sub_des[i].s_device_mac, status);
+            if(err == kNoErr)
+            {
+                app_log("device set %s, product_id:%s, mac:%s", (status == true) ? "online" : "offline" ,get_fog_des_g( )->sub_des[i].s_product_id, get_fog_des_g( )->sub_des[i].s_device_mac);
+            }else
+            {
+                app_log("set device status error!");
+            }
         }
     }
 
-    err = kNoErr;
-
-    exit:
-    return err;
+    return kNoErr;
 }
 
 
@@ -967,6 +1030,34 @@ OSStatus get_remote_subdevice_list( void )
     return err;
 }
 
+static void cli_get_sub_device_info(char *pcWriteBuffer, int xWriteBufferLen, int argc, char **argv)
+{
+    uint32_t index = 0;
+
+    if (argc == 1)
+    {
+        get_sub_device_queue_all_info();
+
+    } else if(argc == 2)
+    {
+        index = atoi(argv[1]);
+        get_sub_device_queue_index_info(index);
+    }else
+    {
+        app_log("argc is error");
+    }
+
+    return;
+}
+
+
+
+void subdevice_add_cli(void)
+{
+    cli_register_commands(mxchip_subdevice_cmd, sizeof(mxchip_subdevice_cmd)/sizeof(struct cli_command));
+
+    return;
+}
 
 //上电时初始化fog_des
 OSStatus fog_v2_subdevice_des_init(void)
@@ -997,9 +1088,12 @@ OSStatus fog_v2_subdevice_des_init(void)
     //把云端的列表拉到本地 并和本地列表做对比
     get_remote_subdevice_list();
 
-//    //批量设置在线！！！！！(可选项目)
-//    err = fog_v2_subdevice_des_set_online();
-//    require_noerr(err, exit);
+    //批量设置状态(可选项目)
+    err = fog_v2_subdevice_des_set_status(false);
+    require_noerr(err, exit);
+
+    //增加命令行cli
+    //subdevice_add_cli();
 
     app_log("\r\n@@@@@@@@@@@@@@ sub device des init stop @@@@@@@@@@@@@\r\n");
 

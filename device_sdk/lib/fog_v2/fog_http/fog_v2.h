@@ -12,11 +12,12 @@
  *     y：错误修补的次数。
  */
 #define FOG_V2_LIB_VERSION_MAJOR        (2)
-#define FOG_V2_LIB_VERSION_MINOR        (4)
+#define FOG_V2_LIB_VERSION_MINOR        (5)
 #define FOG_V2_LIB_VERSION_REVISION     (0)
 
 
 #define WAIT_HTTP_RES_MAX_TIME              (7*1000) //http等待返回最大超时时间为7s
+#define HTTP_MAX_RETRY_TIMES                (4)      //最大重试次数
 
 #define FOG_HTTP_SUCCESS                    (0)
 #define FOG_HTTP_TOKEN_EXPIRED              (1200)    //token过期
@@ -79,7 +80,7 @@
 
 #define FOG_V2_PAYLOAD_LEN_MAX              (2048)
 
-#define FOG_V2_SUB_DEVICE_MAX_NUM           (4) //子设备的最大支持数目
+#define FOG_V2_SUB_DEVICE_MAX_NUM           (8) //子设备的最大支持数目
 #define FOG_V2_SUB_DEVICE_MQTT_TOPIC_LEN    (64)
 #define FOG_V2_SUB_DEVICE_DES_PASSWORD      (0xAAAAAAAA) //密码 上电之后读取该值,如果不是该值,需要清空子设备参数区
 
@@ -99,8 +100,8 @@ typedef struct _FOG_SUB_DES_S
 
     char s_device_mac[16];   //MAC地址
 
-    char s_product_id[64];   //产品ID
-    char s_device_id[64];    //设备ID
+    char s_product_id[40];   //产品ID
+    char s_device_id[40];    //设备ID
 }FOG_SUB_DES_S;
 
 typedef struct _FOG_DES_S
@@ -132,6 +133,7 @@ typedef struct _FOG_DES_S
 }FOG_DES_S;
 
 extern void user_free_json_obj(json_object **obj);
+extern bool get_wifi_status(void);
 extern FOG_DES_S *get_fog_des_g(void);
 extern void fog_des_clean(void);
 extern void fog_set_device_recovery_flag(void);
@@ -159,7 +161,7 @@ extern OSStatus fog_v2_ota_upload_log(void);
 extern OSStatus init_fog_v2_service(void);     //初始化fog服务
 extern OSStatus start_fog_v2_service(void);    //开启fog的服务
 extern OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag); //往云端发送数据
-extern void fog_v2_set_device_recovery_flag(void);
+extern bool fog_v2_set_device_recovery_flag(void);
 
 #endif
 

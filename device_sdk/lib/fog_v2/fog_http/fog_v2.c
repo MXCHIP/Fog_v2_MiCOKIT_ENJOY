@@ -19,8 +19,8 @@
     #error "FOG_V2_DEVICE_SN is not define"
 #endif
 
-#ifndef FOG_V2_OTA_ENABLE
-    #error "FOG_V2_OTA_ENABLE is not define"
+#ifndef FOG_V2_OTA_CHECK_ENABLE
+    #error "FOG_V2_OTA_CHECK_ENABLE is not define"
 #endif
 
 static bool fog_v2_sdk_init_success = false;
@@ -33,6 +33,7 @@ static mico_semaphore_t fog_v2_init_complete_sem = NULL;
 extern void wlan_get_mac_address (unsigned char *mac);
 
 void user_free_json_obj(json_object **obj);
+bool get_wifi_status(void);
 FOG_DES_S *get_fog_des_g(void);
 void fog_des_clean(void);
 void fog_WifiStatusHandler(WiFiEvent status, void* const inContext);
@@ -68,7 +69,7 @@ OSStatus fog_v2_device_generate_device_vercode(void);   //生成验证码
 OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool *need_update);  //OTA检查
 OSStatus fog_v2_ota_upload_log(void);                   //上传OTA log
 
-void fog_v2_set_device_recovery_flag(void);
+bool fog_v2_set_device_recovery_flag(void);
 void set_https_connect_status(bool status);
 bool get_https_connect_status(void);
 void set_mqtt_connect_status(bool status);
@@ -81,6 +82,19 @@ void user_free_json_obj(json_object **obj)
         *obj = NULL;
     }
 }
+
+//获取网络连接状态
+bool get_wifi_status(void)
+{
+    LinkStatusTypeDef link_status;
+
+    memset(&link_status, 0, sizeof(link_status));
+
+    micoWlanGetLinkStatus(&link_status);
+
+    return (bool)(link_status.is_connected);
+}
+
 
 //获取结构体指针全局变量
 FOG_DES_S *get_fog_des_g(void)
@@ -117,18 +131,20 @@ bool fog_v2_is_mqtt_connect(void)
 //功能：设备端设置回收标志位 若调用该接口，设备重启后联网会自动向云端发起设备回收请求
 //参数：无
 //返回值：无
-void fog_v2_set_device_recovery_flag(void)
+bool fog_v2_set_device_recovery_flag(void)
 {
     if(get_fog_des_g() == NULL)
     {
         app_log("fog sdk is not init!");
-        return;
+        return false;
     }
 
     app_log("[NOTICE]device unbind!!");
     mico_rtos_thread_msleep(10);
     fog_des_g->is_recovery = true;
     mico_system_context_update(mico_system_context_get());
+
+    return true;
 }
 
 //设置mqtt连接状态
@@ -283,8 +299,10 @@ OSStatus init_fog_v2_service(void)
 
     fog_des_g = (FOG_DES_S *)(context->user_config_data);
 
-    err = kNoErr;
+    fog_des_g->is_https_connect = false;
+    fog_des_g->is_mqtt_connect = false;
 
+    err = kNoErr;
 exit:
     return err;
 }
@@ -294,9 +312,6 @@ exit:
 static OSStatus fog_des_init(void)
 {
     OSStatus err = kGeneralErr;
-
-    err = init_fog_v2_service();
-    require_noerr( err, exit );
 
     if(false == check_fog_des_settings())
     {
@@ -395,10 +410,13 @@ static OSStatus push_http_req_to_queue(FOG_HTTP_REQUEST_SETTING_S *http_req)
 {
     OSStatus err = kGeneralErr;
 
-    err = mico_rtos_is_queue_full(&fog_http_request_queue);
-    require_noerr( err, exit );
+    if(mico_rtos_is_queue_full(&fog_http_request_queue) == true)
+    {
+        app_log("fog_http_request_queue is full!");
+        return kGeneralErr;
+    }
 
-    err = mico_rtos_push_to_queue(&fog_http_request_queue, &http_req, 10); //只传递了一个地址
+    err = mico_rtos_push_to_queue(&fog_http_request_queue, &http_req, 10); //??′?μYá?ò???μ??·
     if(err != kNoErr)
     {
         if(http_req->http_body != NULL)
@@ -406,9 +424,9 @@ static OSStatus push_http_req_to_queue(FOG_HTTP_REQUEST_SETTING_S *http_req)
             free(http_req->http_body);
             http_req->http_body = NULL;
         }
+        app_log("push req to fog_http_request_queue error");
     }
 
- exit:
     return err;
 }
 
@@ -418,11 +436,33 @@ OSStatus get_http_res_from_queue(FOG_HTTP_RESPONSE_SETTING_S *http_res, uint32_t
     OSStatus err = kGeneralErr;
     uint32_t res_body_len = 0;
     FOG_HTTP_RESPONSE_SETTING_S *fog_http_res_p = NULL;
+    FOG_HTTP_REQUEST_SETTING_S *fog_http_req = NULL;
 
     memset(http_res, 0, sizeof(FOG_HTTP_RESPONSE_SETTING_S));
 
     err = mico_rtos_pop_from_queue( &fog_http_response_queue, &fog_http_res_p, WAIT_HTTP_RES_MAX_TIME);
-    require_noerr( err, exit );
+    if(err != kNoErr)
+    {
+        http_res->send_status = HTTP_CONNECT_ERROR;
+        http_res->status_code = -1;
+        app_log("mico_rtos_pop_from_queue() timeout!!!");
+
+        if(mico_rtos_is_queue_full(&fog_http_request_queue) == true)
+        {
+            err = mico_rtos_pop_from_queue(&fog_http_request_queue, &fog_http_req, 10);
+            if(err == kNoErr)
+            {
+                if(fog_http_req->http_body != NULL)
+                {
+                    free(fog_http_req->http_body);
+                    fog_http_req->http_body = NULL;
+                }
+                app_log("push one req from queue!");
+            }
+        }
+
+        return kGeneralErr;
+    }
 
     require_action_string((fog_http_res_p->http_res_id == id), exit, err = kIDErr, "response id is error");     //检查ID
 
@@ -480,6 +520,12 @@ OSStatus fog_v2_push_http_req_mutex(bool is_jwt, FOG_HTTP_METHOD method, char *r
         app_log("[error]want send http request, but fog_http_response_queue is full");
         err = mico_rtos_pop_from_queue(&fog_http_response_queue, &fog_http_response_temp_p, 10); //弹出数据
         require_noerr_string(err, exit, "mico_rtos_pop_from_queue() error");
+
+        if(fog_http_response_temp_p->fog_response_body != NULL)
+        {
+            free(fog_http_response_temp_p->fog_response_body);
+            fog_http_response_temp_p->fog_response_body = NULL;
+        }
 
         fog_http_response_temp_p = NULL;
     }
@@ -697,6 +743,7 @@ static OSStatus fog_v2_device_activate(void)
     char http_body[256] = {0};
     int32_t code = -1;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
@@ -706,10 +753,11 @@ static OSStatus fog_v2_device_activate(void)
     }
 
  start_actiavte:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_device_activate is waitting...");
-        mico_thread_msleep(200);
+        err = kGeneralErr;
+        goto exit;
     }
 
     sprintf(fog_des_g->devicepw, "%04ld", (mico_rtos_get_time()) % 10000);
@@ -756,6 +804,13 @@ static OSStatus fog_v2_device_activate(void)
         app_log("<===== device_activate error <======");
 
         mico_thread_msleep(200);
+
+        retry ++;
+        if(retry >= HTTP_MAX_RETRY_TIMES)
+        {
+            return kGeneralErr;
+        }
+
         goto start_actiavte;
     }
 
@@ -770,14 +825,16 @@ static OSStatus fog_v2_device_get_token( void )
     char http_body[256] = { 0 };
     int32_t code = -1;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
 
     memset( &user_http_res, 0, sizeof(user_http_res) );
 
     start_get_token:
-    while ( get_https_connect_status( ) == false )
+    while ( get_wifi_status() == false )
     {
         app_log("https disconnect, fog_v2_device_get_token is waitting...");
-        mico_thread_msleep( 200 );
+        err = kGeneralErr;
+        goto exit;
     }
 
     sprintf( http_body, device_get_token_body, fog_des_g->device_id, fog_des_g->devicepw );
@@ -832,6 +889,13 @@ static OSStatus fog_v2_device_get_token( void )
         app_log("<===== device_get_token error <======");
 
         mico_thread_msleep( 200 );
+
+        retry++;
+        if ( retry >= HTTP_MAX_RETRY_TIMES )
+        {
+            return kGeneralErr;
+        }
+
         goto start_get_token;
     }
 
@@ -844,14 +908,16 @@ static OSStatus fog_v2_device_check_superuser( void )
     OSStatus err = kGeneralErr;
     int32_t code = -1;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
     start_check_superuser:
-    while ( get_https_connect_status( ) == false )
+    while ( get_wifi_status() == false )
     {
         app_log("https disconnect, fog_v2_device_check_superuser is waitting...");
-        mico_thread_msleep( 200 );
+        err = kGeneralErr;
+        goto exit;
     }
 
     app_log("=====> device_check_superuser send ======>");
@@ -884,6 +950,13 @@ static OSStatus fog_v2_device_check_superuser( void )
         app_log("<===== device_check_superuser error <======");
 
         mico_thread_msleep( 200 );
+
+        retry++;
+        if ( retry >= HTTP_MAX_RETRY_TIMES )
+        {
+            return kGeneralErr;
+        }
+
         goto start_check_superuser;
     }
 
@@ -898,14 +971,16 @@ static OSStatus fog_v2_device_recovery(void)
     const char* device_recovery_body = "{\"deviceid\":\"%s\"}";
     char http_body[256] = {0};
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
  start_recovery:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_device_recovery is waitting...");
-        mico_thread_msleep(200);
+        err = kGeneralErr;
+        goto exit;
     }
 
     if(fog_des_g->is_activate == false)
@@ -946,6 +1021,13 @@ static OSStatus fog_v2_device_recovery(void)
         app_log("<===== device_recovery error <======");
 
         mico_thread_msleep(200);
+
+        retry++;
+        if ( retry >= HTTP_MAX_RETRY_TIMES )
+        {
+            return kGeneralErr;
+        }
+
         goto start_recovery;
     }
 
@@ -960,14 +1042,16 @@ static OSStatus fog_v2_device_sync_status(void)
     const char* device_sync_status_body = "{\"product_id\":\"%s\",\"moduletype\":\"%s\",\"firmware\":\"%s\",\"mico\":\"%s\"}";
     char http_body[256] = {0};
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
  start_sync_status:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_device_sync_status is waitting...");
-        mico_thread_msleep(500);
+        err = kGeneralErr;
+        goto exit;
     }
 
     sprintf(http_body, device_sync_status_body, fog_des_g->product_id, fog_des_g->module_type, fog_des_g->firmware, fog_des_g->mico_version);
@@ -998,6 +1082,13 @@ static OSStatus fog_v2_device_sync_status(void)
         app_log("<===== device_sync_status error <======");
 
         mico_thread_msleep(200);
+
+        retry ++;
+        if(retry >= HTTP_MAX_RETRY_TIMES)
+        {
+            return kGeneralErr;
+        }
+
         goto start_sync_status;
     }
 
@@ -1013,16 +1104,18 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
     const char *ota_ckeck_body = "{\"product_id\":\"%s\",\"firmware_type\":\"%s\",\"modulename\":\"%s\",\"firmware\":\"%s\"}";
     char http_body[512] = {0};
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
     *need_update = false;
 
  start_ota_check:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_ota_check is waitting...");
-        mico_thread_msleep(500);
+        err = kGeneralErr;
+        goto exit;
     }
 
     sprintf(http_body, ota_ckeck_body, fog_des_g->product_id, fog_des_g->fog_v2_lib_version, fog_des_g->module_type, fog_des_g->firmware);
@@ -1036,11 +1129,11 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
     err = process_response_body(user_http_res.fog_response_body, &code);
     require_noerr( err, exit );
 
-
     if(code == FOG_HTTP_OTA_NO_UPDATE)
     {
         err = kNoErr; //不需要更新
         *need_update = false;
+        app_log("<===== ota check success <======");
         goto exit;
     }else
     {
@@ -1061,6 +1154,9 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
                 memcpy(resoponse_body, user_http_res.fog_response_body, strlen(user_http_res.fog_response_body));
                 *need_update = true;
             }
+        }else
+        {
+            app_log("[ERROR]resoponse_body is NULL");
         }
     }
 
@@ -1078,6 +1174,13 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
         app_log("<===== ota check error <======");
 
         mico_thread_msleep(200);
+
+        retry ++;
+        if(retry >= HTTP_MAX_RETRY_TIMES)
+        {
+            return kGeneralErr;
+        }
+
         goto start_ota_check;
     }
 
@@ -1093,14 +1196,16 @@ OSStatus fog_v2_ota_upload_log(void)
     const char *ota_upload_log_body = "{\"deviceid\":\"%s\",\"software\":\"%s\",\"modulename\":\"%s\"}";
     char http_body[512] = {0};
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
  start_ota_upload_log:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_ota_upload_log is waitting...");
-        mico_thread_msleep(500);
+        err = kGeneralErr;
+        goto exit;
     }
 
     sprintf(http_body, ota_upload_log_body, fog_des_g->device_id, fog_des_g->firmware, fog_des_g->module_type);
@@ -1132,6 +1237,13 @@ OSStatus fog_v2_ota_upload_log(void)
         app_log("<===== ota upload log error <======");
 
         mico_thread_msleep(200);
+
+        retry ++;
+        if(retry >= HTTP_MAX_RETRY_TIMES)
+        {
+            return kGeneralErr;
+        }
+
         goto start_ota_upload_log;
     }
 
@@ -1146,14 +1258,16 @@ OSStatus fog_v2_device_generate_device_vercode(void)
     int32_t code = -1;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     char http_body[64] = "{\"callback\":true}";
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
  start_generate_device_vercode:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_device_generate_device_vercode is waitting...");
-        mico_thread_msleep(200);
+        err = kGeneralErr;
+        goto exit;
     }
 
     app_log("=====> generate_device_vercode send ======>");
@@ -1195,6 +1309,12 @@ OSStatus fog_v2_device_generate_device_vercode(void)
         memset( fog_des_g->vercode, 0, sizeof(fog_des_g->vercode) );
         app_log("<===== generate_device_vercode error <======");
 
+        retry ++;
+        if(retry >= HTTP_MAX_RETRY_TIMES)
+        {
+            return kGeneralErr;
+        }
+
         mico_thread_msleep(200);
         goto start_generate_device_vercode;
     }
@@ -1217,6 +1337,8 @@ OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag)
     json_object *send_json_object = NULL;
     char *http_body = NULL;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
+
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
@@ -1224,6 +1346,8 @@ OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag)
     {
         app_log("fog sdk is not init!");
         return kGeneralErr;
+        err = kGeneralErr;
+        goto exit;
     }
 
     if(strlen(payload) >= FOG_V2_PAYLOAD_LEN_MAX)
@@ -1233,10 +1357,11 @@ OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag)
     }
 
  start_send_event:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
-        //app_log("https disconnect, fog_v2_device_send_event is waitting...");
-        mico_thread_msleep(200);
+        app_log("https disconnect, fog_v2_device_send_event is waitting...");
+        err = kGeneralErr;
+        goto exit;
     }
 
     send_json_object = json_object_new_object();
@@ -1277,53 +1402,46 @@ OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag)
 
         app_log("<===== send_event error <======");
         mico_thread_msleep(100);
+
+        retry ++;
+        if(retry >= HTTP_MAX_RETRY_TIMES)
+        {
+            return kGeneralErr;
+        }
+
         goto start_send_event;
     }
 
     return err;
 }
 
-void send_event_test(mico_thread_arg_t arg)
+//等待mqtt连接
+bool fog_v2_wait_mqtt_connect(uint32_t timeout)
 {
-    uint32_t count = 0;
+    uint32_t start_time = mico_rtos_get_time();
+    uint32_t stop_time = 0;
 
-    while(1)
+    while(fog_des_g->is_mqtt_connect == false) //等待MQTT连接完成
     {
-        fog_v2_device_send_event("{\"111\":111}", FOG_V2_SEND_EVENT_RULES_PUBLISH | FOG_V2_SEND_EVENT_RULES_DATEBASE);
-        mico_thread_msleep(500);
-        count ++;
-        if(count > 100)
-            break;
-    }
+        stop_time = mico_rtos_get_time();
 
-    mico_rtos_delete_thread(NULL);
-}
-
-//等待网络连接
-void wait_until_net_connect(void)
-{
-    LinkStatusTypeDef link_status;
-
-    while(1)
-    {
-        memset(&link_status, 0, sizeof(link_status));
-
-        micoWlanGetLinkStatus(&link_status);
-        if(link_status.is_connected == true)
+        if(stop_time - start_time > timeout)
         {
-            break;
+            return false;
         }
-
-        mico_thread_msleep(30);
+        mico_thread_msleep(50);
     }
-}
 
+    return true;
+}
 
 //FOG初始化
 static void fog_init(mico_thread_arg_t arg)
 {
     UNUSED_PARAMETER( arg );
     OSStatus err = kGeneralErr;
+
+    require_string(get_wifi_status() == true, exit, "wifi is not connect");
 
     err = mico_rtos_init_mutex(&http_send_setting_mutex);
     require_noerr(err, exit);
@@ -1335,8 +1453,6 @@ static void fog_init(mico_thread_arg_t arg)
  start_fog_init:
     err = fog_des_init();
     require_noerr( err, exit );
-
-    wait_until_net_connect();  //等待网络连接
 
     stop_fog_bonjour();
     start_fog_bonjour(true, fog_des_g);
@@ -1362,7 +1478,7 @@ static void fog_init(mico_thread_arg_t arg)
         goto start_fog_init;
     }
 
-#if (FOG_V2_OTA_ENABLE == 1)
+#if (FOG_V2_OTA_CHECK_ENABLE == 1)
     //OTA检查
     fog_v2_ota();
 #endif
@@ -1375,10 +1491,7 @@ static void fog_init(mico_thread_arg_t arg)
     //4.开启MQTT后台服务
     init_fog_mqtt_service();
 
-    while(fog_des_g->is_mqtt_connect == false) //等待MQTT连接完成
-    {
-        mico_thread_msleep(50);
-    }
+    require_string(fog_v2_wait_mqtt_connect(5000) == true, exit, "mqtt connect error!"); //等待MQTT连接完成
 
     app_log("mqtt connect ok.....");
 
@@ -1401,14 +1514,15 @@ static void fog_init(mico_thread_arg_t arg)
     err = fog_tcp_server_start();
     require_noerr( err, exit );
 
-//    /* Create a new thread */
-//    err = mico_rtos_create_thread( NULL, MICO_APPLICATION_PRIORITY, "send_event_test", send_event_test, 0x1000, (uint32_t)NULL );
-//    require_noerr_string( err, exit, "ERROR: Unable to start the send_event_test" );
-
     fog_v2_sdk_init_success = true;
 
  exit:
     mico_rtos_set_semaphore( &fog_v2_init_complete_sem ); //wait until get semaphore
+
+    if(err != kNoErr)
+    {
+        stop_fog_bonjour();
+    }
 
     mico_rtos_delete_thread( NULL );
     return;

@@ -24,11 +24,11 @@
 // lib version 
 #define MQTT_MAIN_VERSION       (0x00)
 #define MQTT_SUB_VERSION        (0x01)
-#define MQTT_REV_VERSION        (0x08)
+#define MQTT_REV_VERSION        (0x09)
 #define MQTT_LIB_VERSION        ((MQTT_MAIN_VERSION << 16) | (MQTT_SUB_VERSION << 8 ) | (MQTT_REV_VERSION))
 
 #define MAX_PACKET_ID   (65535)
-#define MAX_MESSAGE_HANDLERS    (5)
+#define MAX_MESSAGE_HANDLERS    (30)
 #define DEFAULT_READBUF_SIZE  (512)
 #define DEFAULT_SENDBUF_SIZE  (512)
 #define MAX_SIZE_CLIENT_ID  (23+1)

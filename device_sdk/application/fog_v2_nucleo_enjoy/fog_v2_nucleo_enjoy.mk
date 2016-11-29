@@ -17,6 +17,7 @@ $(NAME)_SOURCES := 	fogcloud_down_thread.c \
 					user_oled.c \
 					user_template.c
 					
-$(NAME)_LINK_FILES := user_oled.o				
+$(NAME)_LINK_FILES := user_oled.o \
+				      hello_fog.o				
 															
 $(NAME)_COMPONENTS := protocols/fog_v2

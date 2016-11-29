@@ -406,7 +406,7 @@ static void mqtt_client_thread( mico_thread_arg_t arg )
             {
                 goto MQTT_disconnect;
             }
-            no_mqtt_msg_exchange = false;
+            //no_mqtt_msg_exchange = false;
         }
 
         /* if no msg exchange, we need to check ping msg to keep alive. */
@@ -606,6 +606,8 @@ static OSStatus add_mqtt_topic(char* topic, enum QoS qos, messageHandler message
     if(messageHandler == NULL)
         return kGeneralErr;
 
+    require_string(mqtt_unsub_settings.mutex != NULL, exit, "[ERROR] MQTT client is not init!");
+
     err = mico_rtos_lock_mutex(&(mqtt_sub_settings.mutex));
     require_noerr( err, exit );
 
@@ -645,6 +647,10 @@ OSStatus remove_mqtt_topic( char* topic )
 
     if(strlen(topic) >= MAX_MQTT_TOPIC_SIZE)
         return kGeneralErr;
+
+    app_log("remove mqtt topic : %s", topic);
+
+    require_string(mqtt_unsub_settings.mutex != NULL, exit, "[ERROR] MQTT client is not init!");
 
     err = mico_rtos_lock_mutex(&(mqtt_unsub_settings.mutex));
     require_noerr( err, exit );

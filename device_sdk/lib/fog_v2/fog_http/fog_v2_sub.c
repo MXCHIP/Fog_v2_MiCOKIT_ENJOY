@@ -50,6 +50,8 @@ static OSStatus fog_v2_subdevice_register(const char *s_product_id, const char *
     int32_t code = -1;
     uint32_t index = 0;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint32_t usable_index = 0;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
@@ -65,11 +67,22 @@ static OSStatus fog_v2_subdevice_register(const char *s_product_id, const char *
         return kNoErr;
     }
 
+    if(get_sub_device_queue_usable_index(&usable_index) == false)
+    {
+        app_log("can't find usable index");
+        return kGeneralErr;
+    }else
+    {
+        app_log("usable index = %ld", usable_index);
+    }
+
 start_subdevice_register:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_subdevice_register is waitting...");
         mico_thread_msleep(200);
+        err = kGeneralErr;
+        goto exit;
     }
 
     sprintf(http_body, sub_device_register_body, s_product_id, s_mac, "123");
@@ -125,6 +138,13 @@ start_subdevice_register:
         if ( (HTTP_CONNECT_ERROR == user_http_res.send_status) || (HTTP_RESPONSE_FAILURE == user_http_res.send_status))
         {
             mico_rtos_thread_msleep( 200 );
+
+            retry ++;
+            if(retry >= HTTP_MAX_RETRY_TIMES)
+            {
+                return kGeneralErr;
+            }
+
             goto start_subdevice_register;
         }
     }
@@ -143,6 +163,7 @@ static OSStatus fog_v2_subdevice_unregister(const char *s_product_id, const char
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     char *subdevice_id = NULL;
     uint32_t index = 0;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
@@ -159,10 +180,12 @@ static OSStatus fog_v2_subdevice_unregister(const char *s_product_id, const char
     }
 
 start_subdevice_unregister:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_subdevice_unregister is waitting...");
         mico_thread_msleep(200);
+        err = kGeneralErr;
+        goto exit;
     }
 
     sprintf(http_body, sub_device_unregister_body, subdevice_id);
@@ -212,6 +235,13 @@ start_subdevice_unregister:
         if ( (HTTP_CONNECT_ERROR == user_http_res.send_status) || (HTTP_RESPONSE_FAILURE == user_http_res.send_status))
         {
             mico_thread_msleep( 200 );
+
+            retry ++;
+            if(retry >= HTTP_MAX_RETRY_TIMES)
+            {
+                return kGeneralErr;
+            }
+
             goto start_subdevice_unregister;
         }
     }
@@ -229,6 +259,7 @@ static OSStatus fog_v2_subdevice_attach(const char *s_product_id, const char *s_
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     uint32_t index = 0;
     char *subdevice_id = NULL;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
@@ -245,10 +276,12 @@ static OSStatus fog_v2_subdevice_attach(const char *s_product_id, const char *s_
     }
 
 start_subdevice_attach:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_subdeice_attach is waitting...");
         mico_thread_msleep(200);
+        err = kGeneralErr;
+        goto exit;
     }
 
     sprintf(http_body, sub_device_attach_body, subdevice_id);
@@ -311,6 +344,13 @@ start_subdevice_attach:
         if ( (HTTP_CONNECT_ERROR == user_http_res.send_status) || (HTTP_RESPONSE_FAILURE == user_http_res.send_status))
         {
             mico_thread_msleep( 200 );
+
+            retry ++;
+            if(retry >= HTTP_MAX_RETRY_TIMES)
+            {
+                return kGeneralErr;
+            }
+
             goto start_subdevice_attach;
         }
     }
@@ -329,6 +369,7 @@ static OSStatus fog_v2_subdevice_detach(const char *s_product_id, const char *s_
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     char *subdevice_id = NULL;
     uint32_t index = 0;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
@@ -345,10 +386,12 @@ static OSStatus fog_v2_subdevice_detach(const char *s_product_id, const char *s_
     }
 
 start_subdeice_detach:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_subdevice_detach is waitting...");
         mico_thread_msleep(200);
+        err = kGeneralErr;
+        goto exit;
     }
 
     sprintf(http_body, sub_device_detach_body, subdevice_id);
@@ -411,6 +454,13 @@ start_subdeice_detach:
         if ( (HTTP_CONNECT_ERROR == user_http_res.send_status) || (HTTP_RESPONSE_FAILURE == user_http_res.send_status))
         {
             mico_thread_msleep( 200 );
+
+            retry ++;
+            if(retry >= HTTP_MAX_RETRY_TIMES)
+            {
+                return kGeneralErr;
+            }
+
             goto start_subdeice_detach;
         }
     }
@@ -426,14 +476,17 @@ OSStatus fog_v2_subdevice_add_timeout(const char *s_product_id)
     char http_body[256] = {0};
     int32_t code = -1;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
 start_add_timeout:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_subdevice_add_timeout is waitting...");
         mico_thread_msleep(200);
+        err = kGeneralErr;
+        goto exit;
     }
 
     sprintf(http_body, sub_device_add_timeout_body, s_product_id);
@@ -467,6 +520,13 @@ start_add_timeout:
         if ( (HTTP_CONNECT_ERROR == user_http_res.send_status) || (HTTP_RESPONSE_FAILURE == user_http_res.send_status))
         {
             mico_thread_msleep( 200 );
+
+            retry ++;
+            if(retry >= HTTP_MAX_RETRY_TIMES)
+            {
+                return kGeneralErr;
+            }
+
             goto start_add_timeout;
         }
     }
@@ -482,14 +542,17 @@ OSStatus fog_v2_subdeice_get_list(char *http_response, uint32_t recv_len, bool *
     char http_body[256] = {0};
     int32_t code = -1;
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
 start_get_list:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_subdeice_get_list is waitting...");
         mico_thread_msleep(200);
+        err = kGeneralErr;
+        goto exit;
     }
 
     app_log("=====> subdevice get list send ======>");
@@ -534,6 +597,13 @@ start_get_list:
         if ( (HTTP_CONNECT_ERROR == user_http_res.send_status) || (HTTP_RESPONSE_FAILURE == user_http_res.send_status))
         {
             mico_thread_msleep( 200 );
+
+            retry ++;
+            if(retry >= HTTP_MAX_RETRY_TIMES)
+            {
+                return kGeneralErr;
+            }
+
             goto start_get_list;
         }
     }
@@ -552,6 +622,7 @@ static OSStatus fog_v2_subdevice_send_event(const char *payload, const char *s_p
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     char *subdevice_id = NULL;
     uint32_t index = 0;
+    uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
 
@@ -562,10 +633,12 @@ static OSStatus fog_v2_subdevice_send_event(const char *payload, const char *s_p
     }
 
 start_sub_send_event:
-    while(get_https_connect_status() == false)
+    while(get_wifi_status() == false)
     {
         app_log("https disconnect, fog_v2_subdevice_send_event is waitting...");
         mico_thread_msleep(200);
+        err = kGeneralErr;
+        goto exit;
     }
 
     if(get_sub_device_queue_index_by_mac(&index, s_product_id, s_mac) == false)
@@ -622,6 +695,13 @@ start_sub_send_event:
         if ( (HTTP_CONNECT_ERROR == user_http_res.send_status) || (HTTP_RESPONSE_FAILURE == user_http_res.send_status))
         {
             mico_thread_msleep( 200 );
+
+            retry ++;
+            if(retry >= HTTP_MAX_RETRY_TIMES)
+            {
+                return kGeneralErr;
+            }
+
             goto start_sub_send_event;
         }
     }
@@ -905,7 +985,7 @@ OSStatus fog_v2_subdevice_send(const char *s_product_id, const char *s_mac, cons
 //参数： payload - 接收数据缓冲区地址
 //参数： payload_len - 接收数据缓冲区地址的长度
 //参数： timeout - 接收数据的超时时间
-//返回值：kNoErr为成功 其他值为失败
+//返回值：kNoErr-成功  kDeletedErr-该设备已被删除  kGeneralErr-超时
 OSStatus fog_v2_subdevice_recv(const char *s_product_id, const char *s_mac, char *payload, uint32_t payload_len, uint32_t timeout)
 {
     OSStatus err = kGeneralErr;
@@ -919,16 +999,19 @@ OSStatus fog_v2_subdevice_recv(const char *s_product_id, const char *s_mac, char
 
     if(get_sub_device_queue_index_by_mac(&index, s_product_id, s_mac) == false)
     {
-        app_log("get_sub_device_queue_index_by_mac error");
-        return kGeneralErr;
+        //app_log("get_sub_device_queue_index_by_mac error");
+        return kDeletedErr;
     }
 
     sub_device_queue_p = get_sub_device_queue_addr_by_index(index);
     require(sub_device_queue_p != NULL, exit);
 
     err = mico_rtos_pop_from_queue(sub_device_queue_p, &subdevice_recv_p, timeout);
-    require_noerr_string( err, exit, "queue is full!!!!");
-    require_noerr_action_string(err, exit, app_log("product id:%s, mac:%s queue is full!", s_product_id, s_mac); ,"mico_rtos_pop_from_queue() error");
+    if(err != kNoErr)
+    {
+        err = kGeneralErr;
+        goto exit;
+    }
 
     require_action_string( subdevice_recv_p != NULL, exit, err = kGeneralErr, "subdevice_recv_p is NULL");
 
@@ -1025,7 +1108,7 @@ void gateway_bind_monitor(mico_thread_arg_t arg)
 
     app_log("----------------gateway_bind_monitor thread start----------------");
 
-    err = mico_rtos_init_queue( &sub_device_cmd_queue, "sub device cmd queue", sizeof(SUBDEVICE_RECV_CMD_DATA_S), 2 );
+    err = mico_rtos_init_queue( &sub_device_cmd_queue, "sub device cmd queue", sizeof(SUBDEVICE_RECV_CMD_DATA_S), FOG_V2_SUB_DEVICE_MAX_NUM );
     require_noerr( err, exit );
 
     while(1)
@@ -1054,8 +1137,8 @@ void gateway_bind_monitor(mico_thread_arg_t arg)
                     memset(s_product_id, 0, sizeof(s_product_id));
                     memset(s_mac, 0, sizeof(s_mac));
 
-                    strcpy(s_product_id ,(const char *)get_sub_device_product_id_by_index(index));
-                    strcpy(s_mac ,(const char *)get_sub_device_mac_by_index(index));
+                    strcpy( s_product_id, (const char *) get_sub_device_product_id_by_index( index ) );
+                    strcpy( s_mac, (const char *) get_sub_device_mac_by_index( index ) );
 
                     user_fog_v2_device_notification(MQTT_CMD_SUB_UNBIND, s_product_id, s_mac);
 

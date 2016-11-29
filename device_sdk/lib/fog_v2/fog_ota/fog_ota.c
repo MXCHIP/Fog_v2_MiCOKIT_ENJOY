@@ -9,7 +9,6 @@
 
 #define app_log(M, ...)             custom_log("FOG_OTA", M, ##__VA_ARGS__)
 
-
 typedef struct _http_context_t{
   char *content;
   uint32_t content_length;
@@ -20,7 +19,7 @@ void fog_v2_ota(void);
 
 static OSStatus parse_ota_respose(char *ota_res, char *ota_url, int32_t ota_url_len);
 static OSStatus onReceivedData( struct _HTTPHeader_t * inHeader, uint32_t inPos, uint8_t * inData, size_t inLen, void * inUserContext );
-static void fog_v2_ota_finish(void);
+static OSStatus fog_v2_ota_finish(void);
 
 void fog_ota_thread(mico_thread_arg_t args);
 
@@ -243,11 +242,17 @@ void fog_v2_ota(void)
     memset(ota_url, 0, OTA_URL_LEN_MAX);
 
     err = fog_v2_ota_check(ota_res, OTA_RES_LEN_MAX, &need_update);
-    require_noerr( err, exit );
+    if(err != kNoErr)
+    {
+        app_log("[ERROR]fog_v2_ota_check() error!");
+        user_fog_v2_ota_notification(FOG2_OTA_CHECK_FAILURE);
+        goto exit;
+    }
 
     if(need_update == false)
     {
         app_log("NO OTA EXIST!");
+        user_fog_v2_ota_notification(FOG2_OTA_NO_NEW_VERSION);
         goto exit;
     }
 
@@ -275,11 +280,14 @@ void fog_v2_ota(void)
     if(false == process_path(url->path))     //判断bin文件名称
     {
         app_log("[NOTICE]ota file name error or version is too low!");
+        user_fog_v2_ota_notification(FOG2_OTA_NO_NEW_VERSION);
         goto exit;
     }
 
     err = mico_rtos_init_semaphore( &ota_sem, 1 );//0/1 binary semaphore || 0/N semaphore
     require_noerr( err, exit );
+
+    user_fog_v2_ota_notification(FOG2_OTA_IN_UPDATE);
 
     /* Create a new thread */
     err = mico_rtos_create_thread( NULL, MICO_APPLICATION_PRIORITY, "FOG_V2_OTA", fog_ota_thread, 0x2800, (uint32_t)url );
@@ -289,18 +297,24 @@ void fog_v2_ota(void)
 
     if(http_read_file_success == true)
     {
-        fog_v2_ota_finish();
+        err = fog_v2_ota_finish();
+        if(err == kNoErr)
+        {
+            user_fog_v2_ota_notification(FOG2_OTA_UPDATE_SUCCESS);
+        }
     }
 
  exit:
-    if(http_read_file_success == false)
+    if(need_update == true && http_read_file_success == false)
     {
+        user_fog_v2_ota_notification(FOG2_OTA_UPDATE_FAILURE);
         firmware_version_rollback();
     }
 
     if( ota_sem != NULL )
     {
         mico_rtos_deinit_semaphore( &ota_sem );
+        ota_sem = NULL;
     }
 
     url_free(url); //释放url
@@ -342,7 +356,7 @@ void fog_v2_ota(void)
 //}
 
 
-static void fog_v2_ota_finish(void)
+static OSStatus fog_v2_ota_finish(void)
 {
     OSStatus err = kGeneralErr;
 	md5_context ctx;
@@ -402,18 +416,11 @@ static void fog_v2_ota_finish(void)
     if ( memcmp( md5_recv, md5_calc, sizeof(md5_recv) ) == 0 )
     {
         fog_v2_ota_upload_log( );
-        fog_des_clean( );
 
         err = mico_ota_switch_to_new_fw( ota_file_len, crc );
         require_noerr( err, exit );
 
-        app_log( "OTA SUCCESS. Rebooting...\r\n" );
-
-        while ( 1 )
-        {
-            mico_system_power_perform( mico_system_context_get( ), eState_Software_Reset );
-            mico_thread_sleep(100);
-        }
+        app_log( "OTA SUCCESS!\r\n" );
     }else
     {
         app_log("ERROR!! MD5 Error.");
@@ -422,6 +429,8 @@ static void fog_v2_ota_finish(void)
                  md5_recv[4],md5_recv[5],md5_recv[6],md5_recv[7],
                  md5_recv[8],md5_recv[9],md5_recv[10],md5_recv[11],
                  md5_recv[12],md5_recv[13],md5_recv[14],md5_recv[15]);
+
+        err = kGeneralErr;
     }
 
  exit:
@@ -431,7 +440,7 @@ static void fog_v2_ota_finish(void)
         bin_buf = NULL;
     }
 
-    return;
+    return err;
 }
 
 
@@ -522,6 +531,7 @@ void fog_ota_thread(mico_thread_arg_t args)
     struct timeval t = {0, OTA_YIELD_TMIE*1000};
     char ota_http_requeset[512] = {0}; //512Byte 足够使用了
     bool file_len_right = false;
+    uint8_t retry = 0;
 
     ota_reveive_index = 0;   //ota已接收文件长度清零
 
@@ -668,7 +678,12 @@ void fog_ota_thread(mico_thread_arg_t args)
     if(err != kNoErr)
     {
         mico_thread_msleep(300);
-        goto OTA_START;
+
+        retry ++;
+        if(retry < 3)
+        {
+            goto OTA_START;
+        }
     }
 
  quit_thread:

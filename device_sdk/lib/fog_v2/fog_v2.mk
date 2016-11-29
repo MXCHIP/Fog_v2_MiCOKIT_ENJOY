@@ -19,6 +19,7 @@ $(NAME)_SOURCES :=	fog_bonjour/fog_bonjour.c \
 					fog_mqtt/fog_mqtt.c \
 					fog_mqtt/fog_process_mqtt_cmd.c \
 					fog_ota/fog_ota.c \
+					fog_ota/fog2_ota_notification.c \
 					fog_ota/url.c \
 					fog_tcp_server/fog_tcp_server.c
 					

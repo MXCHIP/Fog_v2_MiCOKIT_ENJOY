@@ -5,6 +5,9 @@
 
 #define REMOTE_DEVICE_LIST_BUFF_LEN     (2048)
 
+//available subdevice callback
+typedef void (*FOG_V2_SUBDEVICE_AVAILABLE_CB)(const char *product_id, const char *mac);
+
 
 extern OSStatus fog_v2_subdevice_des_init(void);
 
@@ -15,6 +18,7 @@ extern char *get_sub_device_commands_topic_by_index( uint32_t index );
 extern char *get_sub_device_cmd_topic_by_index( uint32_t index );
 extern char *get_sub_device_mac_by_index( uint32_t index );
 extern char *get_sub_device_product_id_by_index( uint32_t index );
+extern OSStatus fog_v2_get_sub_device_all_available(FOG_V2_SUBDEVICE_AVAILABLE_CB user_callbck);
 
 extern OSStatus remove_mqtt_topic_by_mac(const char *s_product_id, const char *mac);
 extern OSStatus add_mqtt_topic_by_mac(const char *s_product_id, const char *mac);

@@ -87,7 +87,7 @@ OSStatus init_template(uint32_t command_id, uint32_t CMD)
 
     if(mico_template != NULL || mico_template_G != NULL)
     {
-       destory_template();
+        destory_template();
     }
 
     mico_template = json_object_new_object();
