@@ -106,9 +106,6 @@ typedef struct _FOG_SUB_DES_S
 
 typedef struct _FOG_DES_S
 {
-    bool is_https_connect;      //HTTPS 是否连接
-    bool is_mqtt_connect;       //MQTT是否连接
-
     bool is_activate;           //是否已激活设备
 	bool is_hava_superuser;     //是否拥有超级用户
 	bool is_recovery;           //是否需要回收授权

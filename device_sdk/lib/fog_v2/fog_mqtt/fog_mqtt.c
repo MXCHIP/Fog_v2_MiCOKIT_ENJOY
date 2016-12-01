@@ -454,6 +454,7 @@ static void mqtt_client_thread( mico_thread_arg_t arg )
     }
 
   exit:
+#if (FOG_V2_USE_SUB_DEVICE == 1)
     mico_rtos_deinit_mutex( &(mqtt_sub_settings.mutex) );
     mico_rtos_deinit_mutex( &(mqtt_unsub_settings.mutex) );
 
@@ -461,6 +462,7 @@ static void mqtt_client_thread( mico_thread_arg_t arg )
     mico_rtos_deinit_semaphore( &mqtt_sub_settings.finish_sem );
     mico_rtos_deinit_semaphore( &mqtt_unsub_settings.unsub_sem );
     mico_rtos_deinit_semaphore( &mqtt_unsub_settings.finish_sem );
+#endif
 
     mico_rtos_deinit_event_fd( sub_topic_event_fd );
     mico_rtos_deinit_event_fd( unsub_topic_event_fd );

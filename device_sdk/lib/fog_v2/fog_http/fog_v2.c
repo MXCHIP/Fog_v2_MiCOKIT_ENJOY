@@ -26,6 +26,8 @@
 static bool fog_v2_sdk_init_success = false;
 
 FOG_DES_S *fog_des_g = NULL;
+static bool is_https_connect = false;      //HTTPS 是否连接
+static bool is_mqtt_connect = false;       //MQTT是否连接
 
 static mico_mutex_t http_send_setting_mutex = NULL;
 static mico_semaphore_t fog_v2_init_complete_sem = NULL;
@@ -119,13 +121,13 @@ bool fog_v2_is_have_superuser(void)
 //判断是https是否连接
 bool fog_v2_is_https_connect(void)
 {
-    return fog_des_g->is_https_connect;
+    return is_https_connect;
 }
 
 //判断是mqtt是否连接
 bool fog_v2_is_mqtt_connect(void)
 {
-    return fog_des_g->is_mqtt_connect;
+    return is_mqtt_connect;
 }
 
 //功能：设备端设置回收标志位 若调用该接口，设备重启后联网会自动向云端发起设备回收请求
@@ -150,19 +152,19 @@ bool fog_v2_set_device_recovery_flag(void)
 //设置mqtt连接状态
 void set_mqtt_connect_status(bool status)
 {
-    fog_des_g->is_mqtt_connect = status;
+    is_mqtt_connect = status;
 }
 
 //设置https连接状态
 void set_https_connect_status(bool status)
 {
-    fog_des_g->is_https_connect = status;
+    is_https_connect = status;
 }
 
 //获取https连接状态
 bool get_https_connect_status(void)
 {
-    return fog_des_g->is_https_connect;
+    return is_https_connect;
 }
 
 //生成一个http回话id
@@ -298,9 +300,6 @@ OSStatus init_fog_v2_service(void)
     require_action_string(context != NULL, exit, err = kGeneralErr,"[ERROR]context is NULL!!!");
 
     fog_des_g = (FOG_DES_S *)(context->user_config_data);
-
-    fog_des_g->is_https_connect = false;
-    fog_des_g->is_mqtt_connect = false;
 
     err = kNoErr;
 exit:
@@ -1421,7 +1420,7 @@ bool fog_v2_wait_mqtt_connect(uint32_t timeout)
     uint32_t start_time = mico_rtos_get_time();
     uint32_t stop_time = 0;
 
-    while(fog_des_g->is_mqtt_connect == false) //等待MQTT连接完成
+    while(fog_v2_is_mqtt_connect() == false) //等待MQTT连接完成
     {
         stop_time = mico_rtos_get_time();
 

@@ -1093,7 +1093,7 @@ OSStatus fog_v2_subdevice_des_init(void)
     require_noerr(err, exit);
 
     //Ôö¼ÓÃüÁîĞĞcli
-    //subdevice_add_cli();
+    subdevice_add_cli();
 
     app_log("\r\n@@@@@@@@@@@@@@ sub device des init stop @@@@@@@@@@@@@\r\n");
 
