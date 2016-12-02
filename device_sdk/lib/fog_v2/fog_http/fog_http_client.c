@@ -52,8 +52,6 @@ const char *device_activate_string =
 "Content-Length: %d\r\n\r\n"
 "%s";
 
-const char *fog_token = "{\"token\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJvcmlnX2lhdCI6MTQ3MzQzNDA3MiwidXNlcl9pZCI6MzAxNzIsImRldmljZWlkIjoiZDRlZmM3YTAtNzRkNS0xMWU2LTliYWYtMDAxNjNlMTIwZDk4IiwiZXhwIjoxNDczNzY4MDkyfQ.soVOUdYulR-jX2p24rRPgglJ9mAr74zHkC6MhWCwJB8\"}";
-
 bool has_http_req_send = true;  //是否有http请求需要发送
 
 static FOG_HTTP_RESPONSE_SETTING_S fog_http_res; //全局变量 http响应的全局设置
@@ -369,9 +367,12 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
 
  HTTP_SSL_START:
     set_https_connect_status(false);
+
+    app_log("start dns annlysis, domain:%s", fog_host);
     err = usergethostbyname(fog_host, (uint8_t *)ipstr, sizeof(ipstr));
     if ( err != kNoErr )
     {
+        app_log("dns error!!! doamin:%s", fog_host);
         mico_thread_msleep( 200 );
         goto HTTP_SSL_START;
     }
@@ -536,7 +537,7 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
 
  exit:
     set_https_connect_status(false);
-//    send_response_to_queue(HTTP_CONNECT_ERROR, req_id, 0, NULL);    //只有发生连接发生错误的时候才会进入exit中
+    send_response_to_queue(HTTP_CONNECT_ERROR, req_id, 0, NULL);    //只有发生连接发生错误的时候才会进入exit中
 
     if( client_ssl )
     {

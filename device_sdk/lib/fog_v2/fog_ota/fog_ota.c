@@ -281,6 +281,7 @@ void fog_v2_ota(void)
     {
         app_log("[NOTICE]ota file name error or version is too low!");
         user_fog_v2_ota_notification(FOG2_OTA_NO_NEW_VERSION);
+        need_update = false;
         goto exit;
     }
 
