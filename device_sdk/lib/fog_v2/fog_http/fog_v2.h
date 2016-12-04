@@ -63,7 +63,7 @@
 
 //OTAºÏ≤È
 #define FOG_V2_OTA_UP_DATA_CHECK            HTTP_POST
-#define FOG_V2_OTA_UP_DATA_URI              ("/ota/updatacheck/")
+#define FOG_V2_OTA_UP_DATA_URI              ("/ota/updatecheck/")
 
 //OTA…œ±®
 #define FOG_V2_OTA_UPLOAD_LOG               HTTP_POST
