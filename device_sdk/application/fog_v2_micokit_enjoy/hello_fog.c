@@ -12,21 +12,6 @@ static mico_semaphore_t wifi_sem;
 
 extern void micokit_ext_mfg_test( mico_Context_t *inContext );
 
-#ifdef USE_MiCOKit_EXT
-// add test mode for MiCOKit-EXT board,check Arduino_D5 pin when system startup
-WEAK bool MicoExtShouldEnterTestMode( void )
-{
-    if ( MicoGpioInputGet( (mico_gpio_t) Arduino_D5 ) == false )
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-#endif
-
 USED void user_fog_v2_ota_notification(FOG2_OTA_EVENT_TYPE ota_event_type)
 {
     switch(ota_event_type)
@@ -96,15 +81,6 @@ int application_start( void )
 
     err = mico_system_init( mico_context );
     require_noerr( err, exit );
-
-#ifdef USE_MiCOKit_EXT
-    /* user test mode to test MiCOKit-EXT board */
-    if ( MicoExtShouldEnterTestMode( ) == true )
-    {
-        app_log("Enter ext-board test mode by key2.");
-        micokit_ext_mfg_test( mico_context );
-    }
-#endif
 
     /* wait for wifi on */
     mico_rtos_get_semaphore( &wifi_sem, MICO_WAIT_FOREVER );
