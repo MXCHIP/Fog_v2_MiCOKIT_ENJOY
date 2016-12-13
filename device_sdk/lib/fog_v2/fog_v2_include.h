@@ -128,6 +128,11 @@ OSStatus fog_v2_get_sub_device_all_available(FOG_V2_SUBDEVICE_AVAILABLE_CB user_
 //返回值：kNoErr-成功 kGeneralErr-失败
 OSStatus fog_v2_get_subdevice_num_info(uint32_t *tatal, uint32_t *used);
 
+//功能：添加子设备超时
+//参数： s_product_id - 子设备产品ID
+//返回值：kNoErr-成功 kGeneralErr-失败
+OSStatus fog_v2_subdevice_add_timeout(const char *s_product_id);
+
 //功能：设备状态改变通知（该函数需要用户在自己的代码中复写函数体，中间件是使用WEAK定义调用该函数）
 //参数：type - 事件类型
 //事件类型一共有三种

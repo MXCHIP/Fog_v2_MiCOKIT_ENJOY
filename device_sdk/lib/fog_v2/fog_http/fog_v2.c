@@ -1096,7 +1096,7 @@ static OSStatus fog_v2_device_sync_status(void)
 
 
 //OTA检查
-OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool *need_update)
+OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool *need_update_p)
 {
     OSStatus err = kGeneralErr;
     int32_t code = -1;
@@ -1106,8 +1106,6 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
     uint8_t retry = 0;
 
     memset(&user_http_res, 0, sizeof(user_http_res));
-
-    *need_update = false;
 
  start_ota_check:
     while(get_wifi_status() == false)
@@ -1131,7 +1129,7 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
     if(code == FOG_HTTP_OTA_NO_UPDATE)
     {
         err = kNoErr; //不需要更新
-        *need_update = false;
+        *need_update_p = false;
         app_log("<===== ota check success <======");
         goto exit;
     }else
@@ -1146,12 +1144,12 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
         {
             if(resoponse_body_len <= strlen(user_http_res.fog_response_body))
             {
-                *need_update = false;
+                *need_update_p = false;
                 app_log("[ERROR]resoponse_body_len is small!");
             }else
             {
                 memcpy(resoponse_body, user_http_res.fog_response_body, strlen(user_http_res.fog_response_body));
-                *need_update = true;
+                *need_update_p = true;
             }
         }else
         {
@@ -1168,7 +1166,7 @@ OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool
 
     if(err != kNoErr)
     {
-        need_update = false;
+        *need_update_p = false;
 
         app_log("<===== ota check error <======");
 
