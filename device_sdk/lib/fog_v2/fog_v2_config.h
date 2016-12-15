@@ -57,6 +57,12 @@
 
 #define FOG_V2_OTA_CHECK_ENABLE         (1)      //1:enable 0:disable  打开后在fog初始化中会检查当前版本
 
+#define FOG_V2_USER_FLASH_PARAM         (1)      //1:enable 0:disable  是否使用fog v2中间件维护的参数区
+
+#if (FOG_V2_USER_FLASH_PARAM == 1)
+#define FOG_V2_USER_FLASH_PARAM_LEN     (512)    //中间件替用户维护的参数区,建议此长度不超过1Kbyte.如果是EMW3239模块开启了蓝牙协议栈,则用户可用的参数区更小
+#endif
+
 #define FOG_V2_USE_SUB_DEVICE           (0)      //1:enable 0:disable  是否使用子设备接口,只有EMW3239才会使用到
 
 #endif

@@ -122,6 +122,10 @@ typedef struct _FOG_DES_S
     char device_id[64];         //…Ë±∏ID
     char device_token[256];     //token
 
+#if (FOG_V2_USER_FLASH_PARAM == 1)
+    char user_app_data[FOG_V2_USER_FLASH_PARAM_LEN];    //user data
+#endif
+
 #if (FOG_V2_USE_SUB_DEVICE == 1)
     mico_mutex_t sub_des_mutex;
     uint32_t sub_des_password;

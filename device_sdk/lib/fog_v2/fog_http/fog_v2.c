@@ -23,6 +23,11 @@
     #error "FOG_V2_OTA_CHECK_ENABLE is not define"
 #endif
 
+#ifndef FOG_V2_USER_FLASH_PARAM
+    #error "FOG_V2_USER_FLASH_PARAM is not define"
+#endif
+
+
 static bool fog_v2_sdk_init_success = false;
 
 FOG_DES_S *fog_des_g = NULL;
@@ -148,6 +153,55 @@ bool fog_v2_set_device_recovery_flag(void)
 
     return true;
 }
+
+#if (FOG_V2_USER_FLASH_PARAM == 1)
+//功能：将用户数据写入到中间件的flash用户参数区
+//参数：user_data-用户数据指针, offset-偏移量, user_data_len-用户数据长度
+//返回值：kNoErr-成功,其他-失败
+OSStatus fog_v2_write_user_param(const uint8_t *user_data, uint32_t user_data_len, uint32_t offset)
+{
+    OSStatus err = kGeneralErr;
+
+    if(get_fog_des_g() == NULL)
+    {
+        app_log("fog sdk is not init!");
+        return kGeneralErr;
+    }
+
+    require_action((user_data_len + offset) <= FOG_V2_USER_FLASH_PARAM_LEN, exit, err = kGeneralErr);
+
+    memcpy(get_fog_des_g()->user_app_data + offset, user_data, user_data_len);
+
+    err = mico_system_context_update(mico_system_context_get());
+    require_noerr_string(err, exit, "update error!");
+
+exit:
+    return err;
+}
+
+//功能：将中间件的用户flash参数区读出
+//参数：user_data-用户数据指针, offset-偏移量, user_data_len-用户数据长度
+//返回值：kNoErr-成功,其他-失败
+OSStatus fog_v2_read_user_param(uint8_t *user_data, uint32_t user_data_len, uint32_t offset)
+{
+    OSStatus err = kGeneralErr;
+
+    if(get_fog_des_g() == NULL)
+    {
+        app_log("fog sdk is not init!");
+        return kGeneralErr;
+    }
+
+    require_action((user_data_len + offset) <= FOG_V2_USER_FLASH_PARAM_LEN, exit, err = kGeneralErr);
+
+    memcpy(user_data, get_fog_des_g()->user_app_data + offset, user_data_len);
+
+    err = kNoErr;
+
+exit:
+    return err;
+}
+#endif
 
 //设置mqtt连接状态
 void set_mqtt_connect_status(bool status)
@@ -415,7 +469,7 @@ static OSStatus push_http_req_to_queue(FOG_HTTP_REQUEST_SETTING_S *http_req)
         return kGeneralErr;
     }
 
-    err = mico_rtos_push_to_queue(&fog_http_request_queue, &http_req, 10); //??′?μYá?ò???μ??·
+    err = mico_rtos_push_to_queue(&fog_http_request_queue, &http_req, 10);
     if(err != kNoErr)
     {
         if(http_req->http_body != NULL)
@@ -1336,15 +1390,12 @@ OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag)
     FOG_HTTP_RESPONSE_SETTING_S user_http_res;
     uint8_t retry = 0;
 
-
     memset(&user_http_res, 0, sizeof(user_http_res));
 
     if(fog_v2_sdk_init_success == false)
     {
         app_log("fog sdk is not init!");
         return kGeneralErr;
-        err = kGeneralErr;
-        goto exit;
     }
 
     if(strlen(payload) >= FOG_V2_PAYLOAD_LEN_MAX)
