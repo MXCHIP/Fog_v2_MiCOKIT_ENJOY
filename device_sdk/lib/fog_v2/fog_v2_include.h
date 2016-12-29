@@ -31,6 +31,12 @@ OSStatus init_fog_v2_service(void);
 //返回值：kNoErr为成功 其他为失败
 OSStatus start_fog_v2_service(void);
 
+//功能：设备端从服务器获取时间
+//参数：recv_p - 接收缓冲区地址
+//参数：recv_len - 接收缓冲区长度,长度需要大于512 Byte
+//返回值：kNoErr为成功 其他为失败
+OSStatus fog_v2_device_get_server_time(char *recv_p, uint32_t recv_len);
+
 //功能：往云端发送数据
 //参数： payload - 要往云端发送的数据，该指针指向的数据只能为json格式
 //参数： flag - 发送方式

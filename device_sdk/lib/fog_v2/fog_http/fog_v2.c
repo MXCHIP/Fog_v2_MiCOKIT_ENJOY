@@ -71,6 +71,7 @@ static OSStatus fog_v2_device_get_token(void);          //获取token
 static OSStatus fog_v2_device_check_superuser(void);    //检查超级用户
 static OSStatus fog_v2_device_recovery(void);           //设备回收
 static OSStatus fog_v2_device_sync_status(void);        //同步状态
+OSStatus fog_v2_device_get_server_time(char *server_time_p, uint32_t recv_len); //获取时间
 OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag); //发送数据
 OSStatus fog_v2_device_generate_device_vercode(void);   //生成验证码
 OSStatus fog_v2_ota_check(char *resoponse_body, int32_t resoponse_body_len, bool *need_update);  //OTA检查
@@ -390,7 +391,7 @@ static OSStatus fog_des_init(void)
 
 
 //设置请求参数
-static OSStatus set_fog_v2_http_req(FOG_HTTP_REQUEST_SETTING_S *http_req, bool is_jwt, FOG_HTTP_METHOD method, char *request_uri, char *host_name, char *http_body, uint32_t http_req_id)
+OSStatus set_fog_v2_http_req(FOG_HTTP_REQUEST_SETTING_S *http_req, bool is_jwt, FOG_HTTP_METHOD method, char *request_uri, char *host_name, char *http_body, uint32_t http_req_id)
 {
     memset(http_req, 0, sizeof(FOG_HTTP_REQUEST_SETTING_S));
 
@@ -411,11 +412,14 @@ static OSStatus set_fog_v2_http_req(FOG_HTTP_REQUEST_SETTING_S *http_req, bool i
         return kGeneralErr;
     }
 
-    if(strlen(http_body) > HTTP_REQUEST_BODY_MAX_LEN)
+    if(http_body != NULL)
     {
-        app_log("http_body is too long!");
-        memset(http_req, 0, sizeof(FOG_HTTP_REQUEST_SETTING_S));
-        return kGeneralErr;
+        if(strlen(http_body) > HTTP_REQUEST_BODY_MAX_LEN)
+        {
+            app_log("http_body is too long!");
+            memset(http_req, 0, sizeof(FOG_HTTP_REQUEST_SETTING_S));
+            return kGeneralErr;
+        }
     }
 
     if(strlen(fog_des_g->device_token) > HTTP_REQUEST_JWT_MAX_LEN)
@@ -747,6 +751,61 @@ OSStatus process_response_body_bool(const char *http_body, int32_t *code, const 
     err = kNoErr;
 
  exit:
+
+    if(http_body_json_obj != NULL)
+    {
+        json_object_put(http_body_json_obj);
+        http_body_json_obj = NULL;
+    }
+
+    return err;
+}
+
+//get json data
+OSStatus process_response_body_get_data(const char *http_body, int32_t *code, char *data_p, uint32_t data_len)
+{
+    OSStatus err = kGeneralErr;
+    json_object *http_body_json_obj = NULL, *meta_json_obj = NULL, *data_json_obj = NULL, *code_json_obj = NULL;
+    const char *data_json_string = NULL;
+
+    require_string(http_body != NULL, exit, "param error!");
+    require_string(code != NULL, exit, "param error!");
+    require_string(data_p != NULL, exit, "param error!");
+
+    require_string(((*http_body == '{') && (*(http_body + strlen(http_body) - 1) == '}')), exit, "http body JSON format error");
+
+    http_body_json_obj = json_tokener_parse(http_body);
+    require_string(http_body_json_obj != NULL, exit, "json_tokener_parse error");
+
+    meta_json_obj = json_object_object_get(http_body_json_obj, "meta");
+    require_string(meta_json_obj != NULL, exit, "get meta error!");
+
+    code_json_obj = json_object_object_get(meta_json_obj, "code");
+    require_string(code_json_obj != NULL, exit, "get code error!");
+
+    *code = json_object_get_int(code_json_obj);
+    if(*code != FOG_HTTP_SUCCESS)
+    {
+        err = kNoErr;
+        goto exit;
+    }
+
+    data_json_obj = json_object_object_get(http_body_json_obj, "data");
+    require_string(data_json_obj != NULL, exit, "get data error!");
+
+    data_json_string = json_object_to_json_string(data_json_obj);
+    require_action_string(data_json_string != NULL, exit, err = kNoMemoryErr, "create data string error!");
+
+    require_action_string(data_len > strlen(data_json_string), exit, err = kGeneralErr, "data len error!");
+
+    memcpy(data_p, data_json_string, strlen(data_json_string));
+    err = kNoErr;
+ exit:
+    if ( data_json_obj != NULL )
+    {
+        json_object_put( data_json_obj );
+        data_json_obj = NULL;
+    }
 
     if(http_body_json_obj != NULL)
     {
@@ -1368,6 +1427,65 @@ OSStatus fog_v2_device_generate_device_vercode(void)
 
         mico_thread_msleep(200);
         goto start_generate_device_vercode;
+    }
+
+    return err;
+}
+
+//功能：设备端从服务器获取时间
+//参数：recv_p - 接收缓冲区地址
+//参数：recv_len - 接收缓冲区长度,长度需要大于512 Byte
+//返回值：kNoErr为成功 其他为失败
+OSStatus fog_v2_device_get_server_time(char *server_time_p, uint32_t recv_len)
+{
+    OSStatus err = kGeneralErr;
+    int32_t code = -1;
+    FOG_HTTP_RESPONSE_SETTING_S user_http_res;
+    uint8_t retry = 0;
+
+    memset(&user_http_res, 0, sizeof(user_http_res));
+
+ start_get_server_time:
+    while(get_wifi_status() == false)
+    {
+        app_log("https disconnect, fog_v2_device_get_server_time is waitting...");
+        err = kGeneralErr;
+        goto exit;
+    }
+
+    app_log("=====> get_server_time send ======>");
+
+    err = fog_v2_push_http_req_mutex(false, FOG_V2_GET_SERVER_TIME, FOG_V2_GET_SERVER_TIME_URI, FOG_V2_HTTP_DOMAIN_NAME, NULL, &user_http_res);
+    require_noerr( err, exit );
+
+    //处理返回结果
+    err = process_response_body_get_data(user_http_res.fog_response_body, &code, server_time_p, recv_len);
+    require_noerr( err, exit );
+
+    err = check_http_body_code(code);   //如果是token过期是错误问题，函数内部会处理完成之后再返回
+    require_noerr( err, exit );
+
+    app_log("<===== get_server_time success <======");
+
+ exit:
+     if(user_http_res.fog_response_body != NULL) //释放资源
+     {
+         free(user_http_res.fog_response_body);
+         user_http_res.fog_response_body = NULL;
+     }
+
+    if ( err != kNoErr )
+    {
+        app_log("<===== get_server_time error <======");
+
+        retry ++;
+        if(retry >= HTTP_MAX_RETRY_TIMES)
+        {
+            return kGeneralErr;
+        }
+
+        mico_thread_msleep(200);
+        goto start_get_server_time;
     }
 
     return err;

@@ -57,6 +57,10 @@
 #define FOG_V2_GENERATE_VERCODE_METHOD      HTTP_POST
 #define FOG_V2_GENERATE_VERCODE_URI         ("/device/generatedevicevercode/")
 
+//获取服务器时间
+#define FOG_V2_GET_SERVER_TIME              HTTP_GET
+#define FOG_V2_GET_SERVER_TIME_URI          ("/servertime/")
+
 //发送数据
 #define FOG_V2_SEND_EVENT_METHOD            HTTP_POST
 #define FOG_V2_SEND_EVENT_URI               ("/device/sendeventadv/")
@@ -133,6 +137,7 @@ typedef struct _FOG_DES_S
 #endif
 }FOG_DES_S;
 
+
 extern void user_free_json_obj(json_object **obj);
 extern bool get_wifi_status(void);
 extern FOG_DES_S *get_fog_des_g(void);
@@ -161,6 +166,7 @@ extern OSStatus fog_v2_ota_upload_log(void);
 //用户调用接口
 extern OSStatus init_fog_v2_service(void);     //初始化fog服务
 extern OSStatus start_fog_v2_service(void);    //开启fog的服务
+extern OSStatus fog_v2_device_get_server_time(char *server_time_p, uint32_t recv_len); //获取时间
 extern OSStatus fog_v2_device_send_event(const char *payload, uint32_t flag); //往云端发送数据
 extern bool fog_v2_set_device_recovery_flag(void);
 
