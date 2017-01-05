@@ -10,18 +10,28 @@
 #endif
 
 OSStatus fog_tcp_server_start( void );
+OSStatus fog_tcp_server_close( void );
+static bool fog_v2_tcp_server_is_start(void);
 
 void fog_tcp_client_thread(mico_thread_arg_t arg);
 void fog_tcp_server_thread(mico_thread_arg_t arg);
 
 const char *fog_local_response_vercode_json = "{\"deviceid\":\"%s\",\"devicepw\":\"%s\",\"vercode\":\"%s\"}";
 const char *fog_local_response_vercode_error = "{\"error\":\"no_vercode\"}";
+const char *fog_local_response_vercode_is_bind = "{\"error\":\"is_bind\"}";
 const char *fog_local_response_http = "HTTP/1.1 200 OK\r\n\
 Content-Type: application/json\r\n\
 Content-Length: %d\r\n\r\n\
 %s\r\n";
 
 bool fog_v2_tcp_server_has_client = false;  //已有客户端标志位
+static bool fog_v2_is_tcp_server_start = false;
+static mico_semaphore_t fog_v2_close_tcp_server = NULL;
+
+static bool fog_v2_tcp_server_is_start(void)
+{
+    return fog_v2_is_tcp_server_start;
+}
 
 //校验收到的客户端数据
 bool check_recv_data(char *buf)
@@ -33,7 +43,6 @@ bool check_recv_data(char *buf)
     {
         return false;
     }
-
 }
 
 //从云端拿到vercode 并发送给手机
@@ -57,8 +66,14 @@ OSStatus get_vercode_from_fog(int client_fd)
     err = fog_v2_device_generate_device_vercode();
     if(err == kNoErr)
     {
-        sprintf(response_body, fog_local_response_vercode_json,  get_fog_des_g()->device_id, get_fog_des_g()->devicepw, get_fog_des_g()->vercode);
-        sprintf(response_html, fog_local_response_http, strlen(response_body), response_body);
+        if(fog_v2_is_have_superuser() == true)
+        {
+            sprintf(response_html, fog_local_response_http, strlen(fog_local_response_vercode_is_bind), fog_local_response_vercode_is_bind);
+        }else
+        {
+            sprintf(response_body, fog_local_response_vercode_json,  get_fog_des_g()->device_id, get_fog_des_g()->devicepw, get_fog_des_g()->vercode);
+            sprintf(response_html, fog_local_response_http, strlen(response_body), response_body);
+        }
     }else
     {
         sprintf(response_html, fog_local_response_http, strlen(fog_local_response_vercode_error), fog_local_response_vercode_error);
@@ -164,9 +179,15 @@ void fog_tcp_server_thread( mico_thread_arg_t arg )
     char  client_ip_str[16] = {0};
     int tcp_listen_fd = -1, client_fd = -1;
     fd_set readfds;
+    int tcp_server_close_event_fd = -1;
+
+    fog_v2_is_tcp_server_start = true;
 
     memset(&server_addr, 0, sizeof(server_addr));
     memset(&client_addr, 0, sizeof(client_addr));
+
+    tcp_server_close_event_fd = mico_create_event_fd( fog_v2_close_tcp_server);
+    require_action( tcp_server_close_event_fd >= 0, exit, err = kGeneralErr );
 
     tcp_listen_fd = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP );
     require_action(IsValidSocket( tcp_listen_fd ), exit, err = kNoResourcesErr );
@@ -185,8 +206,15 @@ void fog_tcp_server_thread( mico_thread_arg_t arg )
     {
         FD_ZERO( &readfds );
         FD_SET( tcp_listen_fd, &readfds );
+        FD_SET( tcp_server_close_event_fd, &readfds );
 
-        require( select(tcp_listen_fd + 1, &readfds, NULL, NULL, NULL) >= 0, exit );
+        require( select(Max(tcp_listen_fd, tcp_server_close_event_fd) + 1, &readfds, NULL, NULL, NULL) >= 0, exit );
+
+        if(FD_ISSET(tcp_server_close_event_fd, &readfds))
+        {
+            err = kNoErr;
+            goto exit;
+        }
 
         if(FD_ISSET(tcp_listen_fd, &readfds))
         {
@@ -221,18 +249,66 @@ void fog_tcp_server_thread( mico_thread_arg_t arg )
 
     SocketClose( &tcp_listen_fd );
 
+    mico_rtos_deinit_event_fd( tcp_server_close_event_fd );
+
+    mico_rtos_deinit_semaphore( &fog_v2_close_tcp_server );
+    fog_v2_close_tcp_server = NULL;
+
+    tcp_server_log( "fog v2 tcp sever closed!");
+
+    fog_v2_is_tcp_server_start = false;
     mico_rtos_delete_thread(NULL );
 }
 
-//开启fog tcp server
+//start fog tcp server
 OSStatus fog_tcp_server_start( void )
 {
     OSStatus err = kNoErr;
+
+    if(fog_v2_tcp_server_is_start() == true)
+    {
+        tcp_server_log( "fog v2 tcp sever is already start!");
+        return kNoErr;
+    }
+
+    tcp_server_log( "fog v2 tcp sever start!");
+
+    err = mico_rtos_init_semaphore( &fog_v2_close_tcp_server, 1 ); //0/1 binary semaphore || 0/N semaphore
+    require_noerr( err, exit );
 
     /* Start TCP server listener thread*/
     err = mico_rtos_create_thread( NULL, MICO_APPLICATION_PRIORITY, "FOG TCP SERVER", fog_tcp_server_thread, 0x800, (uint32_t)NULL );
     require_noerr_string( err, exit, "ERROR: Unable to start the tcp server thread." );
 
  exit:
+     if(err != kNoErr)
+     {
+         if(fog_v2_close_tcp_server != NULL)
+         {
+             mico_rtos_deinit_semaphore( &fog_v2_close_tcp_server );
+         }
+     }
+
     return err;
+}
+
+//tcp server close
+OSStatus fog_tcp_server_close( void )
+{
+    if(fog_v2_tcp_server_is_start() == true)
+    {
+        if(fog_v2_close_tcp_server != NULL)
+        {
+            tcp_server_log("set sem to close tcp server!");
+            return mico_rtos_set_semaphore(&fog_v2_close_tcp_server);
+        }else
+        {
+            tcp_server_log("tcp server sem is error!");
+            return kGeneralErr;
+        }
+    }else
+    {
+        tcp_server_log("tcp server has already closed!");
+        return kNoErr;
+    }
 }

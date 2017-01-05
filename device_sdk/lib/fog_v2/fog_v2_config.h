@@ -51,7 +51,7 @@
 #define FOG_MQTT_DEBUG                  (1)      //MQTT打印信息开关
 
 #define FOG_BONJOUR_SERVICE_NAME        ("_easylink._tcp.local.")  //MDNS service name
-#define FOG_BONJOUR_SERVICE_TTL         (2)     //bonjour的ttl时间
+#define FOG_BONJOUR_SERVICE_TTL         (4)     //bonjour的ttl时间
 
 #define FOG_V2_TCP_SERVER_PORT          (8002)   //APP和设备的本地通信端口
 

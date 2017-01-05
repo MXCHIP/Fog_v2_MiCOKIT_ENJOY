@@ -303,9 +303,13 @@ static void mqtt_client_thread( mico_thread_arg_t arg )
 #if (FOG_V2_USE_SUB_DEVICE == 1)
         FD_SET( sub_topic_event_fd, &readfds );
         FD_SET( unsub_topic_event_fd, &readfds );
+
+        select( Max(Max(sub_topic_event_fd, unsub_topic_event_fd), c.ipstack->my_socket) +1, &readfds, NULL, NULL, &t );
+#else
+        select( c.ipstack->my_socket + 1, &readfds, NULL, NULL, &t );
 #endif
 
-        select( c.ipstack->my_socket + 1, &readfds, NULL, NULL, &t );
+
 
 #if (FOG_V2_USE_SUB_DEVICE == 1)
         /* sub_mqtt_topic change */

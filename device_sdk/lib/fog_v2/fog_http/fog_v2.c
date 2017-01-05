@@ -1665,20 +1665,26 @@ static void fog_init(mico_thread_arg_t arg)
     err = fog_v2_device_check_superuser();  //刚刷新完token,token不可能会失效
     require_noerr( err, exit );
 
+    //6.开启本地tcp server
+    if( fog_des_g->is_hava_superuser == false)
+    {
+        err = fog_tcp_server_start();
+        require_noerr( err, exit );
+    }else
+    {
+        app_log("device is already bind, don't start tcp server");
+    }
+
     stop_fog_bonjour();
     start_fog_bonjour(false, fog_des_g);   //开启bonjour
 
-    //6.同步设备版本、硬件型号到云端
+    //7.同步设备版本、硬件型号到云端
     err = fog_v2_device_sync_status();
     require_noerr( err, exit );
 
-//    //7.生成设备绑定码
+//    //8.生成设备绑定码
 //    err = fog_v2_device_generate_device_vercode( ); //测试用
 //    require_noerr( err, exit );
-
-    //8.开启本地tcp server
-    err = fog_tcp_server_start();
-    require_noerr( err, exit );
 
     fog_v2_sdk_init_success = true;
 

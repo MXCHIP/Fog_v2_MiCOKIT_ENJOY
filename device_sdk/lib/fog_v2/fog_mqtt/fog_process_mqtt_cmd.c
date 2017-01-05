@@ -72,6 +72,8 @@ OSStatus process_fog_v2_mqtt_cmd(const char *cmd_payload)
             stop_fog_bonjour( );
             start_fog_bonjour( false, get_fog_des_g( ) );   //开启bonjour
 
+            fog_tcp_server_start();
+
 #if (FOG_V2_USE_SUB_DEVICE == 1)
             push_cmd_to_subdevice_queue(MQTT_CMD_GATEWAY_UNBIND, cmd_deviceid);//发送消息给队列
 #endif
@@ -101,6 +103,8 @@ OSStatus process_fog_v2_mqtt_cmd(const char *cmd_payload)
 
         stop_fog_bonjour();
         start_fog_bonjour(false, get_fog_des_g());   //开启bonjour
+
+        fog_tcp_server_close();
 
 #if (FOG_V2_USE_SUB_DEVICE == 1)
         push_cmd_to_subdevice_queue(MQTT_CMD_GATEWAY_BIND, cmd_deviceid);

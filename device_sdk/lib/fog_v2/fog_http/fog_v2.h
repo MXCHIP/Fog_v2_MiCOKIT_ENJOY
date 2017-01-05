@@ -12,7 +12,7 @@
  *     y£º´íÎóÐÞ²¹µÄ´ÎÊý¡£
  */
 #define FOG_V2_LIB_VERSION_MAJOR        (2)
-#define FOG_V2_LIB_VERSION_MINOR        (5)
+#define FOG_V2_LIB_VERSION_MINOR        (6)
 #define FOG_V2_LIB_VERSION_REVISION     (0)
 
 
