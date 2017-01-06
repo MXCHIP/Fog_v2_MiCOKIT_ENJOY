@@ -2,7 +2,7 @@
 #define __FOG_V2_H_
 
 #include "fog_http_client.h"
-#include "fog_v2_include.h"
+#include "fog_v2_config.h"
 
 /*
  *     …Ë±∏∂Àfogcloudø‚∞Ê±æ

@@ -960,20 +960,7 @@ static OSStatus fog_v2_device_get_token( void )
     err = process_response_body_string( user_http_res.fog_response_body, &code, "token", fog_des_g->device_token, sizeof(fog_des_g->device_token) );
     require_noerr( err, exit );
 
-    if ( code == FOG_HTTP_PASSSWORD_ERROR )
-    {
-        fog_des_g->is_activate = false;
-        fog_v2_device_activate( );
-        mico_system_context_update( mico_system_context_get( ) );
-
-        if ( user_http_res.fog_response_body != NULL ) //释放资源
-        {
-            free( user_http_res.fog_response_body );
-            user_http_res.fog_response_body = NULL;
-        }
-
-        goto start_get_token;
-    } else if ( code == FOG_HTTP_SUCCESS )
+    if ( code == FOG_HTTP_SUCCESS )
     {
         err = mico_system_context_update( mico_system_context_get( ) );
         require_noerr( err, exit );
@@ -982,6 +969,7 @@ static OSStatus fog_v2_device_get_token( void )
         app_log("<===== device_get_token success <======");
     } else
     {
+        fog_des_g->is_activate = false;
         err = kGeneralErr;
         goto exit;
     }
@@ -1623,8 +1611,6 @@ static void fog_init(mico_thread_arg_t arg)
     stop_fog_bonjour();
     start_fog_bonjour(true, fog_des_g);
 
-    fog_des_g->is_activate = false;
-
     //1.设备激活
     err = fog_v2_device_activate();
     require_noerr( err, exit );
@@ -1632,8 +1618,6 @@ static void fog_init(mico_thread_arg_t arg)
     //2.获取设备授权
     err = fog_v2_device_get_token();
     require_noerr( err, exit );
-
-    //fog_des_g->is_recovery = true;
 
     //3.检查是否需要 回收设备授权
     if(fog_des_g->is_recovery == true)
