@@ -550,7 +550,7 @@ static void fog_v2_http_client_thread(mico_thread_arg_t arg)
     HTTPHeaderDestory( &httpHeader );
 
     mico_thread_msleep(200);
-    system_log("#####https disconnect#####:num_of_chunks:%d, free:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->free_memory);
+    app_log("#####https disconnect#####:num_of_chunks:%d, free:%d", MicoGetMemoryInfo()->num_of_chunks, MicoGetMemoryInfo()->free_memory);
     goto HTTP_SSL_START;
 
     if(fog_http_requeset != NULL)

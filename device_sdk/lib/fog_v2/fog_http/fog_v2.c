@@ -27,6 +27,9 @@
     #error "FOG_V2_USER_FLASH_PARAM is not define"
 #endif
 
+#ifndef ADAPT_MICO_SDK_VSERSION
+    #error "ADAPT_MICO_SDK_VSERSION is not define"
+#endif
 
 static bool fog_v2_sdk_init_success = false;
 
@@ -279,7 +282,13 @@ OSStatus fog_des_recovery(void)
     sprintf(fog_des_g->device_mac, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     app_log("device_mac:%s", fog_des_g->device_mac);
 
+#if (ADAPT_MICO_SDK_VSERSION == 1)
     mico_system_version( &major, &minor, &revision );
+#elif (ADAPT_MICO_SDK_VSERSION == 2)
+    mico_sdk_version( &major, &minor, &revision );
+#else
+    #error "ADAPT_MICO_SDK_VSERSION is not define!"
+#endif
     sprintf(fog_des_g->mico_version, "%d.%d.%d", major, minor, revision);     //设置MICO版本号
 
     memset(fog_des_g->devicepw, 0, sizeof(fog_des_g->devicepw));              //清空密码
@@ -354,13 +363,21 @@ OSStatus init_fog_v2_service(void)
     context = mico_system_context_get();
     require_action_string(context != NULL, exit, err = kGeneralErr,"[ERROR]context is NULL!!!");
 
+#if (ADAPT_MICO_SDK_VSERSION == 1)
     fog_des_g = (FOG_DES_S *)(context->user_config_data);
+    require_action_string(fog_des_g != NULL, exit, err = kGeneralErr,"[ERROR]fog_des_g is NULL!!!");
+
+#elif (ADAPT_MICO_SDK_VSERSION == 2)
+    fog_des_g = (FOG_DES_S *)mico_system_context_get_user_data(context);
+    require_action_string(fog_des_g != NULL, exit, err = kGeneralErr,"[ERROR]fog_des_g is NULL!!!");
+#else
+    #error "ADAPT_MICO_SDK_VSERSION is not define!"
+#endif
 
     err = kNoErr;
 exit:
     return err;
 }
-
 
 //结构体初始化
 static OSStatus fog_des_init(void)
