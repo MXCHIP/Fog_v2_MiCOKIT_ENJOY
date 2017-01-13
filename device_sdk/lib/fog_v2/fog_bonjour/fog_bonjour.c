@@ -112,9 +112,9 @@ OSStatus start_fog_bonjour(bool is_uncheck, FOG_DES_S *in_fog_des)
     OSStatus err;
     net_para_st para;
     mdns_init_t init;
-    mico_status_wlan_t *wlan_status;
+    mico_system_status_wlan_t *wlan_status;
     mico_Context_t *mico_config = mico_system_context_get();
-    mico_system_status_wlan( &wlan_status );
+    mico_system_get_status_wlan( &wlan_status );
 
     temp_txt = malloc(MDNS_TEXT_MAX_SIZE);
     require_action(temp_txt, exit, err = kNoMemoryErr);
