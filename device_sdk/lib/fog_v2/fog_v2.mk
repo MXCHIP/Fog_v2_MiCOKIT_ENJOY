@@ -25,6 +25,6 @@ $(NAME)_SOURCES :=	fog_bonjour/fog_bonjour.c \
 					
 										
 GLOBAL_INCLUDES += 	.
-					
-$(NAME)_COMPONENTS := protocols/mqtt-c/src/MQTTClient-C
+
+$(NAME)_COMPONENTS := protocols/mqtt	#MICOSDK_#3.2
 	
