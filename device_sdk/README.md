@@ -23,17 +23,17 @@ ADAPT_MICO_SDK_VSERSION | 适配MICOSDK版本
 ## 2. 目录结构 
 目录 | 内容
 --- | ---
-lib/mqtt-c | mqtt客户端源码(版本v0.1.9)，**MICOSDK3.2版本之后已经包含了此文件夹**
+lib/mqtt | mqtt客户端源码(版本v0.1.9)，**MICOSDK3.2版本之后已经包含了此文件夹**
 lib/fog_v2 | 与FOGCLOUD V2后台的交互逻辑(版本v2.6.0)
 application/fog_v2_micokit_enjoy | 为庆科的MiCOKIT开发板制作的应用程序,支持硬件`MiCOkit-3165`、`MiCOkit-3166`、`MiCOkit-3239`、`MiCOkit-3031`
 application/fog_v2_nucleo_enjoy  | 为庆科的MiCOKIT开发板制作的应用程序,支持硬件`MiCOkit-NUCEOF411`
 application/fog_v2_api_test | 测试fog_v2底层文件夹提供的API简单demo
 
->**注意：fog_v2和mqtt-c文件夹的内容是一个依赖于MiCOSDK的中间件，为上层应用提供基础API支撑，fog_v2_micokit_enjoy和fog_v2_nucleo_enjoy为依托于具体硬件设备的应用案例**
+>**注意：fog_v2和mqtt文件夹的内容是一个依赖于MiCOSDK的中间件，为上层应用提供基础API支撑，fog_v2_micokit_enjoy和fog_v2_nucleo_enjoy为依托于具体硬件设备的应用案例**
 
 ## 3. 使用步骤 
 ### 3.1 将FOG2.0SDK中间件加入到MiCoder 
-将fog_v2和mqtt-c文件夹复制到MiCOSDK工程目录MiCO SDK/libraries/protocols/中
+将fog_v2和mqtt文件夹复制到MiCOSDK工程目录MiCO SDK/libraries/protocols/中
 根据当前你的硬件平台,将application文件夹里面的应用程序demo复制到MiCOSDK工程目录MiCO_SDK/demos/application中
 
 ### 3.2 在FogCloud后台创建新产品 
