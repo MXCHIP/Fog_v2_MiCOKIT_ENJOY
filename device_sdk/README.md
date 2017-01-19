@@ -23,8 +23,8 @@ ADAPT_MICO_SDK_VSERSION | 适配MICOSDK版本
 ## 2. 目录结构 
 目录 | 内容
 --- | ---
-lib/mqtt-c | mqtt客户端源码(版本v0.1.9)
-lib/fog_v2 | 与FOGCLOUD V2后台的交互逻辑(版本v2.5.0)
+lib/mqtt-c | mqtt客户端源码(版本v0.1.9)，**MICOSDK3.2版本之后已经包含了此文件夹**
+lib/fog_v2 | 与FOGCLOUD V2后台的交互逻辑(版本v2.6.0)
 application/fog_v2_micokit_enjoy | 为庆科的MiCOKIT开发板制作的应用程序,支持硬件`MiCOkit-3165`、`MiCOkit-3166`、`MiCOkit-3239`、`MiCOkit-3031`
 application/fog_v2_nucleo_enjoy  | 为庆科的MiCOKIT开发板制作的应用程序,支持硬件`MiCOkit-NUCEOF411`
 application/fog_v2_api_test | 测试fog_v2底层文件夹提供的API简单demo
