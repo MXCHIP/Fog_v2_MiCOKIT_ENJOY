@@ -27,7 +27,6 @@ lib/mqtt | mqtt客户端源码(版本v0.1.9)，**MICOSDK3.2版本之后已经包
 lib/fog_v2 | 与FOGCLOUD V2后台的交互逻辑(版本v2.6.0)
 application/fog_v2_micokit_enjoy | 为庆科的MiCOKIT开发板制作的应用程序,支持硬件`MiCOkit-3165`、`MiCOkit-3166`、`MiCOkit-3239`、`MiCOkit-3031`
 application/fog_v2_nucleo_enjoy  | 为庆科的MiCOKIT开发板制作的应用程序,支持硬件`MiCOkit-NUCEOF411`
-application/fog_v2_api_test | 测试fog_v2底层文件夹提供的API简单demo
 
 >**注意：fog_v2和mqtt文件夹的内容是一个依赖于MiCOSDK的中间件，为上层应用提供基础API支撑，fog_v2_micokit_enjoy和fog_v2_nucleo_enjoy为依托于具体硬件设备的应用案例**
 
@@ -283,6 +282,6 @@ WIFI网关为子设备提供相应增加子设备、删除子设备、设置在�
 在调用fog_v2_add_subdevice()时，可以通过`auto_set_online`参数来选择是否让接口内部设置子设备在线
 
 
-  [1]: http://mico.io/wiki/download
-  [2]: http://mico.io/wiki/download
+  [1]: http://developer.mico.io/downloads/1
+  [2]: http://developer.mico.io/downloads/1
   [3]: http://static.zybuluo.com/1113240207/1rbfag1e3ff15e5skivjnc2h/2.PNG
